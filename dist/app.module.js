@@ -10,16 +10,37 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
-const consultora_mutual_module_1 = require("./consultora-mutual/consultora-mutual.module");
-const jwt_1 = require("@nestjs/jwt");
+const arvent_group_module_1 = require("./arvent-group/arvent-group.module");
+const typeorm_1 = require("@nestjs/typeorm");
+const core_1 = require("@nestjs/core");
+const guard_1 = require("./common/guard/guard");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [consultora_mutual_module_1.ConsultoraMutualModule, jwt_1.JwtModule.register({})],
+        imports: [
+            arvent_group_module_1.ArventGroupModule,
+            typeorm_1.TypeOrmModule.forRoot({
+                name: 'chronos',
+                type: 'mysql',
+                host: '172.24.0.15',
+                port: 3306,
+                username: 'ubackend',
+                password: 'db6ifiLdXS_5VsC',
+                database: 'chronos_dev_0.1.0',
+                entities: [],
+                synchronize: false,
+            }),
+        ],
         controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        providers: [
+            app_service_1.AppService,
+            {
+                provide: core_1.APP_GUARD,
+                useClass: guard_1.AuthGuard,
+            },
+        ],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map
