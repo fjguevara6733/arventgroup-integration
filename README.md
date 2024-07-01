@@ -1,2 +1,2 @@
 # aventgroup-integration
-avent group - chronos
+arvent group - chronos
