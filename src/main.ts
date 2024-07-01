@@ -16,7 +16,6 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  app.setGlobalPrefix('api')
 
   app.useGlobalGuards(new AuthGuard());
 

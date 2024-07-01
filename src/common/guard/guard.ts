@@ -11,7 +11,8 @@ export class AuthGuard implements CanActivate {
   canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
     const dataHeader = request.headers['api-key'];
-
+    console.log(`url: ${request.originalUrl}`);
+    
     if (dataHeader === this.apiKey) return true;
     else throw new UnauthorizedException();
   }
