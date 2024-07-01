@@ -14,21 +14,26 @@ const arvent_group_module_1 = require("./arvent-group/arvent-group.module");
 const typeorm_1 = require("@nestjs/typeorm");
 const core_1 = require("@nestjs/core");
 const guard_1 = require("./common/guard/guard");
+const config_1 = require("@nestjs/config");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
+                envFilePath: '.env',
+            }),
             arvent_group_module_1.ArventGroupModule,
             typeorm_1.TypeOrmModule.forRoot({
                 name: 'chronos',
                 type: 'mysql',
-                host: '172.24.0.15',
-                port: 3306,
-                username: 'ubackend',
-                password: 'db6ifiLdXS_5VsC',
-                database: 'chronos_live_0.1.0',
+                host: process.env.HOST,
+                port: Number(process.env.PORT),
+                username: process.env.USER,
+                password: process.env.PASSWORD,
+                database: process.env.env === 'dev' ? process.env.DB_DEV : process.env.DB_PROD,
                 entities: [],
                 synchronize: false,
             }),

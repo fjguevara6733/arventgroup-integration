@@ -5,9 +5,14 @@ import { ArventGroupModule } from './arvent-group/arvent-group.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './common/guard/guard';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     ArventGroupModule,
     TypeOrmModule.forRoot({
       name: 'chronos',
