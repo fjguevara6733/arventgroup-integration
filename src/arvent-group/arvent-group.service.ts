@@ -11,7 +11,10 @@ export class ArventGroupService {
   ) {}
   async balances(cvu) {
     const query = `SELECT balance,'ARS' FROM cvu_accounts where cvu=${cvu}`;
-    const result = await this.chronosEntityManager.query(query);
+    const result = await this.chronosEntityManager
+      .query(query)
+      .then((response) => response)
+      .catch((error) => error);
 
     return result;
   }
@@ -19,7 +22,8 @@ export class ArventGroupService {
   async cashOut(req) {
     const { hasta, desde } = req;
 
-    if(!this.getFormattedDate(hasta, desde)) return 'Error en el rango de fechas'
+    if (!this.getFormattedDate(hasta, desde))
+      return 'Error en el rango de fechas';
 
     const query = `SELECT b.datetime,
       c.transaction_id_2,c.counterparty_id,c.counterparty_account_address,
@@ -33,7 +37,10 @@ export class ArventGroupService {
       and a.bind_transaction_id=c.id  and
       a.cvu_account_id=312 and
       date_format(datetime, '%Y%m%d') between '20240625' and '20240626'`;
-    const result = await this.chronosEntityManager.query(query);
+    const result = await this.chronosEntityManager
+      .query(query)
+      .then((response) => response)
+      .catch((error) => error);
 
     return result;
   }
