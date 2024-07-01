@@ -24,6 +24,7 @@ export class ArventGroupController {
         data: await this.arventGroupService.balances(cvu),
       };
     } catch (error) {
+      console.log('error balances', error);
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
     }
   }
@@ -40,6 +41,8 @@ export class ArventGroupController {
         data: await this.arventGroupService.cashOut(req.query),
       };
     } catch (error) {
+      console.log('error transactions', error);
+      
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
     }
   }
