@@ -28,7 +28,7 @@ exports.AppModule = AppModule = __decorate([
                 port: 3306,
                 username: 'ubackend',
                 password: 'db6ifiLdXS_5VsC',
-                database: 'chronos_dev_0.1.0',
+                database: 'chronos_live_0.1.0',
                 entities: [],
                 synchronize: false,
             }),

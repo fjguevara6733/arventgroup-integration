@@ -4,9 +4,10 @@ import {
   Param,
   HttpStatus,
   HttpException,
+  Req,
 } from '@nestjs/common';
 import { ArventGroupService } from './arvent-group.service';
-import { ApiHeader, ApiTags } from '@nestjs/swagger';
+import { ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @Controller()
 @ApiTags('arvent-group')
@@ -29,12 +30,14 @@ export class ArventGroupController {
 
   @Get('transactions')
   @ApiHeader({ name: 'api-key', required: true })
-  async cashOut() {
+  @ApiQuery({ name: 'desde', required: false })
+  @ApiQuery({ name: 'hasta', required: false })
+  async cashOut(@Req() req) {
     try {
       return {
         statusCode: HttpStatus.ACCEPTED,
         message: 'transactions',
-        data: await this.arventGroupService.cashOut(),
+        data: await this.arventGroupService.cashOut(req.query),
       };
     } catch (error) {
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);

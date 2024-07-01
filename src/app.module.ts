@@ -12,12 +12,11 @@ import { AuthGuard } from './common/guard/guard';
     TypeOrmModule.forRoot({
       name: 'chronos',
       type: 'mysql',
-      host: process.env.HOST,
-      port: Number(process.env.PORT),
-      username: process.env.USER,
-      password: process.env.PASSWORD,
-      database:
-        process.env.env === 'dev' ? process.env.DB_DEV : process.env.DB_PROD,
+      host: '172.24.0.15',
+      port: 3306,
+      username: 'ubackend',
+      password: 'db6ifiLdXS_5VsC',
+      database: 'chronos_live_0.1.0',
       entities: [],
       synchronize: false,
     }),
