@@ -14,7 +14,7 @@ import { ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
 export class ArventGroupController {
   constructor(private readonly arventGroupService: ArventGroupService) {}
 
-  @Get('api/balances/:cvu')
+  @Get('arventapi/balances/:cvu')
   @ApiHeader({ name: 'api-key', required: true })
   async balances(@Param('cvu') cvu: string) {
     try {
@@ -29,7 +29,7 @@ export class ArventGroupController {
     }
   }
 
-  @Get('api/transactions')
+  @Get('arventapi/transactions')
   @ApiHeader({ name: 'api-key', required: true })
   @ApiQuery({ name: 'desde', required: false })
   @ApiQuery({ name: 'hasta', required: false })
