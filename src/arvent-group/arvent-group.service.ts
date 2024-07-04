@@ -20,10 +20,33 @@ export class ArventGroupService {
   }
 
   async cashOut(req) {
-    const { hasta, desde } = req;
+    const { hasta, desde, email } = req;
+    const datos = [
+      {
+        email: 'sv@arventgroup.com',
+        id: 311,
+      },
+      {
+        email: 'sebastian.vigliola@gmail.com',
+        id: 1126,
+      },
+      {
+        email: 'sebastian.vigliola@gmail.com',
+        id: 258,
+      },
+      {
+        email: 'Hola@finpact.org',
+        id: 256,
+      },
+    ];
+    const emails = datos.find(
+      (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
+    );
+    console.log(emails);
 
     if (!this.getFormattedDate(hasta, desde))
       return 'Error en el rango de fechas';
+    if (emails === undefined) return 'Email no asociado a ninguna cuenta';
 
     const query = `SELECT b.datetime,
       c.transaction_id_2,c.counterparty_id,c.counterparty_account_address,
@@ -36,7 +59,8 @@ export class ArventGroupService {
       b.account_transaction_id=a.cvu_account_transaction_id
       and a.bind_transaction_id=c.id  and
       a.cvu_account_id=312 and
-      date_format(datetime, '%Y%m%d') between '20240625' and '20240626'`;
+      date_format(datetime, '%Y%m%d') between '${desde.replace('-', '').replace('-', '')}' and '${hasta.replace('-', '').replace('-', '')}'`;
+
     const result = await this.chronosEntityManager
       .query(query)
       .then((response) => response)

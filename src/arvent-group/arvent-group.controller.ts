@@ -33,6 +33,7 @@ export class ArventGroupController {
   @ApiHeader({ name: 'api-key', required: true })
   @ApiQuery({ name: 'desde', required: false })
   @ApiQuery({ name: 'hasta', required: false })
+  @ApiQuery({ name: 'email', required: false })
   async cashOut(@Req() req) {
     try {
       return {
@@ -42,7 +43,7 @@ export class ArventGroupController {
       };
     } catch (error) {
       console.log('error transactions', error);
-      
+
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
     }
   }
