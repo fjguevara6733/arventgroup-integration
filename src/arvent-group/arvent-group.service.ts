@@ -53,13 +53,14 @@ export class ArventGroupService {
       c.counterparty_name,c.origin_debit_cvu,
       c.origin_debit_cuit,  b.transaction_type,
       c.transaction_status,c.transaction_amount
-      FROM cvu_account_transactions a, transactions b, 
+      FROM cvu_account_transactions a, transactions b,
       bind_cvu_accounts_transactions c
       where
       b.account_transaction_id=a.cvu_account_transaction_id
       and a.bind_transaction_id=c.id  and
       a.cvu_account_id=312 and
-      date_format(datetime, '%Y%m%d') between '${desde.replace('-', '').replace('-', '')}' and '${hasta.replace('-', '').replace('-', '')}'`;
+      date_format(datetime, '%Y%m%d') between
+      '${desde.replace('-', '').replace('-', '')}' and '${hasta.replace('-', '').replace('-', '')}'`;
 
     const result = await this.chronosEntityManager
       .query(query)
