@@ -58,7 +58,7 @@ export class ArventGroupService {
       where
       b.account_transaction_id=a.cvu_account_transaction_id
       and a.bind_transaction_id=c.id  and
-      a.cvu_account_id=312 and
+      a.cvu_account_id=${emails.id} and
       date_format(datetime, '%Y%m%d') between
       '${desde.replace('-', '').replace('-', '')}' and '${hasta.replace('-', '').replace('-', '')}'`;
 
