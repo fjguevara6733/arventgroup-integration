@@ -5,12 +5,30 @@ import { EntityManager } from 'typeorm';
 @Injectable()
 export class ArventGroupService {
   private url = process.env.URL_GENERAL;
+  private datos = [
+    {
+      email: 'sv@arventgroup.com',
+      id: 311,
+      cvu: '0000058100000000034579',
+    },
+    {
+      email: 'Hola@finpact.org',
+      id: 256,
+      cvu: '0000058100000000010919',
+    },
+  ];
   constructor(
     @InjectEntityManager('chronos')
     private readonly chronosEntityManager: EntityManager,
   ) {}
-  async balances(cvu) {
-    const query = `SELECT balance,'ARS' FROM cvu_accounts where cvu=${cvu}`;
+  async balances(email) {
+    const emails = this.datos.find(
+      (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
+    );
+    console.log(emails);
+
+    if (emails === undefined) return 'Email no asociado a ninguna cuenta';
+    const query = `SELECT balance,'ARS' FROM cvu_accounts where cvu=${Number(emails.cvu)}`;
     const result = await this.chronosEntityManager
       .query(query)
       .then((response) => response)
@@ -21,17 +39,8 @@ export class ArventGroupService {
 
   async cashOut(req) {
     const { hasta, desde, email } = req;
-    const datos = [
-      {
-        email: 'sv@arventgroup.com',
-        id: 311,
-      },
-      {
-        email: 'Hola@finpact.org',
-        id: 256,
-      },
-    ];
-    const emails = datos.find(
+
+    const emails = this.datos.find(
       (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
     );
     console.log(emails);
