@@ -27,14 +27,6 @@ export class ArventGroupService {
         id: 311,
       },
       {
-        email: 'sebastian.vigliola@gmail.com',
-        id: 1126,
-      },
-      {
-        email: 'sebastian.vigliola@gmail.com',
-        id: 258,
-      },
-      {
         email: 'Hola@finpact.org',
         id: 256,
       },
