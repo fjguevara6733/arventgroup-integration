@@ -16,6 +16,11 @@ export class ArventGroupService {
       id: 256,
       cvu: '0000058100000000010919',
     },
+    {
+      email: 'sebastian.vigliola@gmail.com',
+      id: 258,
+      cvu: '0000058100000000011264',
+    },
   ];
   constructor(
     @InjectEntityManager('chronos')
