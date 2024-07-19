@@ -19,8 +19,8 @@ import { ConfigModule } from '@nestjs/config';
       type: 'mysql',
       host: process.env.HOST,
       port: Number(process.env.PORT),
-      username: process.env.USER,
-      password: process.env.PASSWORD,
+      username: process.env.env === 'dev' ? process.env.USER : process.env.USER_PROD,
+      password: process.env.env === 'dev' ? process.env.PASSWORD : process.env.PASSWORD_PROD,
       database:
         process.env.env === 'dev' ? process.env.DB_DEV : process.env.DB_PROD,
       entities: [],
