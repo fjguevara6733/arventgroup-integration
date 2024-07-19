@@ -1,10 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
+import { DoRequestDto } from 'src/common/dto/create-arvent-group.dto';
+import { BindRequestInterface } from 'src/common/dto/create-arvent-group.interface.';
+import { CoinsFiat, ConceptBind } from 'src/common/enum';
 import { EntityManager } from 'typeorm';
+import * as https from 'https';
+import axios, { AxiosRequestConfig } from 'axios';
+import { readFileSync } from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ArventGroupService {
-  private url = process.env.URL_GENERAL;
+  private urlBind = process.env.URL_BIND;
+  private httpsAgent: https.Agent;
+  private token: string;
+  private timeTokenExpirate: Date;
+  private USERNAME_BIND = process.env.USERNAME_BIND ?? 'matiasplano@gmail.com';
+  private PASSWORD_BIND = process.env.PASSWORD_BIND ?? '2SoeIRGTVP5fGbV';
+  private idBank = process.env.BANK_ID_BIND;
+  private accountId = process.env.ACCOUNT_ID_BIND;
+  private idView = process.env.VIEW_ID_BIND;
   private datos = [
     {
       email: 'sv@arventgroup.com',
@@ -22,6 +37,7 @@ export class ArventGroupService {
       cvu: '0000058100000000011264',
     },
   ];
+
   constructor(
     @InjectEntityManager('chronos')
     private readonly chronosEntityManager: EntityManager,
@@ -42,7 +58,7 @@ export class ArventGroupService {
     return result;
   }
 
-  async cashOut(req) {
+  async getTransactions(req) {
     const { hasta, desde, email } = req;
 
     const emails = this.datos.find(
@@ -72,6 +88,7 @@ export class ArventGroupService {
       .query(query)
       .then((response) => response)
       .catch((error) => error);
+    console.log(result);
 
     return result;
   }
@@ -89,5 +106,120 @@ export class ArventGroupService {
     const diferenciaDias = Math.ceil(diferenciaMilisegundos / 86400000);
 
     return diferenciaDias <= 3;
+  }
+
+  async requestLogin() {
+    try {
+      const data = {
+        username: this.USERNAME_BIND,
+        password: this.PASSWORD_BIND,
+      };
+
+      console.log({ data });
+
+      const config = {
+        method: 'post',
+        url: process.env.URL_BIND + '/login/jwt',
+        data,
+      };
+
+      if (process.env.CLIENT_CERTIFICATE && process.env.CLIENT_KEY) {
+        this.httpsAgent = new https.Agent({
+          cert: readFileSync(process.env.CLIENT_CERTIFICATE),
+          key: readFileSync(process.env.CLIENT_KEY),
+        });
+
+        config['httpsAgent'] = this.httpsAgent;
+      }
+      const response = await axios(config);
+
+      const timeExpire = new Date(
+        new Date().getTime() + response.data.expires_in * 1000,
+      );
+
+      this.timeTokenExpirate = timeExpire;
+
+      this.token = response.data.token;
+
+      return response.data.token;
+    } catch (error) {
+      console.log(error?.response);
+      throw new Error(error?.response?.data?.message);
+    }
+  }
+
+  async checkTokenAndReconnect(expirationDate: Date) {
+    const currentTime = new Date().getTime();
+    const expirationTime = expirationDate.getTime();
+    const oneMinuteInMillis = 60 * 1000;
+
+    if (expirationTime - currentTime <= oneMinuteInMillis) {
+      await this.requestLogin();
+    }
+  }
+
+  async getToken() {
+    if (!this.token) {
+      return await this.requestLogin();
+    }
+    await this.checkTokenAndReconnect(this.timeTokenExpirate);
+    return this.token;
+  }
+
+  async doTransaction(body: DoRequestDto) {
+    try {
+      const { destinationCbu, amount, email } = body;
+      const emails = this.datos.find(
+        (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
+      );
+      console.log(emails);
+
+      const params: BindRequestInterface = {
+        origin_id: uuidv4(),
+        origin_debit: {
+          cvu: emails.cvu,
+        },
+        value: {
+          currency: CoinsFiat.ARS,
+          amount: Number(amount).toFixed(2),
+        },
+        to: {
+          cbu: destinationCbu,
+        },
+        concept: ConceptBind.VAR,
+        description: 'Pago Alfred',
+      };
+      console.log(params);
+
+      // const headers = {
+      //   Authorization: `JWT ${await this.getToken()}`,
+      // };
+      // console.log('headers', headers);
+
+      // const url: string = `https://sandbox.bind.com.ar/v1/banks/322/accounts/21-1-99999-4-6/OWNER/transaction-request-types/TRANSFER-CVU/transaction-requests`;
+      const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/TRANSFER-CVU/transaction-requests`;
+
+      console.log('url', url);
+      const config: AxiosRequestConfig = {
+        method: 'POST',
+        url,
+        data: params,
+        headers: {},
+        httpsAgent: this.httpsAgent,
+      };
+      console.log('config', config);
+
+      // const response = await axios(config);
+
+      // console.log(response.data);
+      console.log('body', body);
+
+      // return response.data;
+      return true;
+    } catch (error) {
+      console.log('body', body);
+      console.log(error.response.data);
+      throw new Error(error?.response?.data?.message);
+    }
   }
 }

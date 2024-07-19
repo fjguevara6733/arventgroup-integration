@@ -29,3 +29,20 @@ export class CashOutDto {
   @IsNumber()
   monto: number;
 }
+
+export class DoRequestDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  destinationCbu: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  amount: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  email: string;
+}
