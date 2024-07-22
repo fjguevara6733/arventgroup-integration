@@ -171,8 +171,6 @@ export class ArventGroupService {
       const emails = this.datos.find(
         (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
       );
-      console.log(emails);
-
       const params: BindRequestInterface = {
         origin_id: uuidv4(),
         origin_debit: {
@@ -217,11 +215,8 @@ export class ArventGroupService {
         .catch((error) => error);
       console.log('responseSave', responseSave);
 
-      console.log('body', body);
-
       return data;
     } catch (error) {
-      console.log('body', body);
       console.log(error.response.data);
       throw new Error(error?.response?.data?.message);
     }
