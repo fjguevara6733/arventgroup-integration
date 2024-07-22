@@ -172,7 +172,7 @@ export class ArventGroupService {
         (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
       );
       const params: BindRequestInterface = {
-        origin_id: uuidv4(),
+        origin_id: uuidv4().substring(0, 14),
         origin_debit: {
           cvu: emails.cvu,
         },
