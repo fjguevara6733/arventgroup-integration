@@ -32,7 +32,7 @@ export class ArventGroupController {
     }
   }
 
-  @Get('transactions')
+  @Get('api/transactions')
   @ApiHeader({ name: 'api-key', required: true })
   @ApiQuery({ name: 'desde', required: false })
   @ApiQuery({ name: 'hasta', required: false })

@@ -41,6 +41,8 @@ export class ArventGroupService {
   constructor(
     @InjectEntityManager('chronos')
     private readonly chronosEntityManager: EntityManager,
+    @InjectEntityManager('arventGroup')
+    private readonly arventGroupEntityManager: EntityManager,
   ) {}
   async balances(email) {
     const emails = this.datos.find(
@@ -60,11 +62,9 @@ export class ArventGroupService {
 
   async getTransactions(req) {
     const { hasta, desde, email } = req;
-
     const emails = this.datos.find(
       (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
     );
-    console.log(emails);
 
     if (!this.getFormattedDate(hasta, desde))
       return 'Error en el rango de fechas';
@@ -88,7 +88,6 @@ export class ArventGroupService {
       .query(query)
       .then((response) => response)
       .catch((error) => error);
-    console.log(result);
 
     return result;
   }
@@ -191,12 +190,10 @@ export class ArventGroupService {
       };
       console.log(params);
 
-      // const headers = {
-      //   Authorization: `JWT ${await this.getToken()}`,
-      // };
-      // console.log('headers', headers);
-
-      // const url: string = `https://sandbox.bind.com.ar/v1/banks/322/accounts/21-1-99999-4-6/OWNER/transaction-request-types/TRANSFER-CVU/transaction-requests`;
+      const headers = {
+        Authorization: `JWT ${await this.getToken()}`,
+      };
+      console.log('headers', headers);
       const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/TRANSFER-CVU/transaction-requests`;
 
       console.log('url', url);
@@ -209,13 +206,21 @@ export class ArventGroupService {
       };
       console.log('config', config);
 
-      // const response = await axios(config);
+      const response = await axios(config);
+      const data = response.data;
+      const responseSave = await this.arventGroupEntityManager
+        .query(
+          `INSERT INTO transactions (idTransaction,response, status)
+          VALUES ('${params.origin_id}', ${JSON.stringify(data)}, '${data.status}')`,
+        )
+        .then((response) => response)
+        .catch((error) => error);
+      console.log('responseSave', responseSave);
 
-      // console.log(response.data);
       console.log('body', body);
 
       // return response.data;
-      return true;
+      return data;
     } catch (error) {
       console.log('body', body);
       console.log(error.response.data);

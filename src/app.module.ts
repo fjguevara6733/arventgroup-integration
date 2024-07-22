@@ -15,6 +15,7 @@ const password =
   process.env.env === 'dev' ? process.env.PASSWORD : process.env.PASSWORD_PROD;
 const database =
   process.env.env === 'dev' ? process.env.DB_DEV : process.env.DB_PROD;
+const databaseArvent = process.env.DB_ARVENT_GROUP;
 
 @Module({
   imports: [
@@ -29,9 +30,42 @@ const database =
       username,
       password,
       database,
-      entities: [],
-      synchronize: false,
+      autoLoadEntities: true,
+      synchronize: true,
     }),
+    TypeOrmModule.forRoot({
+      name: 'arventGroup',
+      type: 'mysql',
+      host,
+      port,
+      username,
+      password,
+      database: databaseArvent,
+      autoLoadEntities: true,
+      synchronize: true,
+    }),
+    // TypeOrmModule.forRoot({
+    //   name: 'chronos',
+    //   type: 'mysql',
+    //   host: '172.24.0.15',
+    //   port: 3306,
+    //   username: 'ubackend',
+    //   password: 'db6ifiLdXS_5VsC',
+    //   database: 'chronos_dev_0.1.0',
+    //   autoLoadEntities: true,
+    //   synchronize: true,
+    // }),
+    // TypeOrmModule.forRoot({
+    //   name: 'arventGroup',
+    //   type: 'mysql',
+    //   host: '172.24.0.15',
+    //   port: 3306,
+    //   username: 'ubackend',
+    //   password: 'db6ifiLdXS_5VsC',
+    //   database: 'arvent_group',
+    //   autoLoadEntities: true,
+    //   synchronize: true,
+    // }),
     ArventGroupModule,
   ],
   controllers: [AppController],
