@@ -206,10 +206,11 @@ export class ArventGroupService {
 
       const response = await axios(config);
       const data = response.data;
+      const dataString = JSON.stringify(data);
       const responseSave = await this.arventGroupEntityManager
         .query(
           `INSERT INTO transactions (idTransaction,response, status)
-          VALUES ('${params.origin_id}', ${JSON.stringify(data)}, '${data.status}')`,
+          VALUES ('${params.origin_id}', '${dataString}', '${data.status}')`,
         )
         .then((response) => response)
         .catch((error) => error);
