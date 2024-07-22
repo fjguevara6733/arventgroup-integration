@@ -219,7 +219,6 @@ export class ArventGroupService {
 
       console.log('body', body);
 
-      // return response.data;
       return data;
     } catch (error) {
       console.log('body', body);
