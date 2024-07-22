@@ -7,20 +7,34 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './common/guard/guard';
 import { ConfigModule } from '@nestjs/config';
 
+const environment = process.env.environment;
 const host = process.env.HOST;
 const port = Number(process.env.PORT);
-const username =
-  process.env.env === 'dev' ? process.env.USER : process.env.USER_PROD;
+const username = environment === 'dev' ? process.env.USER : process.env.USER_PROD;
 const password =
-  process.env.env === 'dev' ? process.env.PASSWORD : process.env.PASSWORD_PROD;
-const database =
-  process.env.env === 'dev' ? process.env.DB_DEV : process.env.DB_PROD;
+environment === 'dev' ? process.env.PASSWORD : process.env.PASSWORD_PROD;
+const database = environment === 'dev' ? process.env.DB_DEV : process.env.DB_PROD;
 const databaseArvent = process.env.DB_ARVENT_GROUP;
+console.log(
+  host,
+  '- ',
+  username,
+  '- ',
+  port,
+  '- ',
+  password,
+  '- ',
+  database,
+  '- ',
+  databaseArvent,
+  '- ',
+  environment,
+);
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
+      isGlobal: true
     }),
     TypeOrmModule.forRoot({
       name: 'chronos',
@@ -30,7 +44,6 @@ const databaseArvent = process.env.DB_ARVENT_GROUP;
       username,
       password,
       database,
-      autoLoadEntities: true,
       synchronize: true,
     }),
     TypeOrmModule.forRoot({
@@ -41,7 +54,6 @@ const databaseArvent = process.env.DB_ARVENT_GROUP;
       username,
       password,
       database: databaseArvent,
-      autoLoadEntities: true,
       synchronize: true,
     }),
     // TypeOrmModule.forRoot({
