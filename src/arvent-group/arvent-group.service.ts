@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ArventGroupService {
-  private urlBind = process.env.URL_BIND;
+  private urlBind = process.env.environment === 'dev' ? process.env.URL_BIND : process.env.URL_BIND_PROD;
   private httpsAgent: https.Agent;
   private token: string;
   private timeTokenExpirate: Date;
@@ -172,7 +172,7 @@ export class ArventGroupService {
         (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
       );
       const params: BindRequestInterface = {
-        origin_id: uuidv4().substring(0, 14),
+        origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
         origin_debit: {
           cvu: emails.cvu,
         },
