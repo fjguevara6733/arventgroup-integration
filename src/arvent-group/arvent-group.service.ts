@@ -121,7 +121,7 @@ export class ArventGroupService {
 
       const config = {
         method: 'post',
-        url: process.env.URL_BIND + '/login/jwt',
+        url: this.urlBind + '/login/jwt',
         data,
       };
 
