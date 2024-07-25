@@ -23,6 +23,8 @@ export class ArventGroupService {
   private idBank = process.env.BANK_ID_BIND;
   private accountId = process.env.ACCOUNT_ID_BIND;
   private idView = process.env.VIEW_ID_BIND;
+  private clientCertificate = process.env.CLIENT_CERTIFICATE;
+  private clientKey = process.env.CLIENT_KEY;
   private datos = [
     {
       email: 'sv@arventgroup.com',
@@ -124,15 +126,18 @@ export class ArventGroupService {
         url: this.urlBind + '/login/jwt',
         data,
       };
+      console.log('config', config);
 
-      if (process.env.CLIENT_CERTIFICATE && process.env.CLIENT_KEY) {
+      if (this.clientCertificate && this.clientKey) {
         this.httpsAgent = new https.Agent({
-          cert: readFileSync(process.env.CLIENT_CERTIFICATE),
-          key: readFileSync(process.env.CLIENT_KEY),
+          cert: readFileSync(this.clientCertificate),
+          key: readFileSync(this.clientKey),
         });
 
         config['httpsAgent'] = this.httpsAgent;
       }
+      console.log('config 2', config);
+
       const response = await axios(config);
 
       const timeExpire = new Date(
