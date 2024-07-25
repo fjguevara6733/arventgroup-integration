@@ -18,8 +18,14 @@ export class ArventGroupService {
   private httpsAgent: https.Agent;
   private token: string;
   private timeTokenExpirate: Date;
-  private USERNAME_BIND = process.env.USERNAME_BIND ?? 'matiasplano@gmail.com';
-  private PASSWORD_BIND = process.env.PASSWORD_BIND ?? '2SoeIRGTVP5fGbV';
+  private USERNAME_BIND =
+    process.env.environment === 'dev'
+      ? process.env.USERNAME_BIND
+      : process.env.USERNAME_BIND_PROD;
+  private PASSWORD_BIND =
+    process.env.environment === 'dev'
+      ? process.env.PASSWORD_BIND
+      : process.env.PASSWORD_BIND_PROD;
   private idBank = process.env.BANK_ID_BIND;
   private accountId = process.env.ACCOUNT_ID_BIND;
   private idView = process.env.VIEW_ID_BIND;
