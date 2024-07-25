@@ -27,7 +27,10 @@ export class ArventGroupService {
       ? process.env.PASSWORD_BIND
       : process.env.PASSWORD_BIND_PROD;
   private idBank = process.env.BANK_ID_BIND;
-  private accountId = process.env.ACCOUNT_ID_BIND;
+  private accountId =
+    process.env.environment === 'dev'
+      ? process.env.ACCOUNT_ID_BIND
+      : process.env.ACCOUNT_ID_BIND_PROD;
   private idView = process.env.VIEW_ID_BIND;
   private clientCertificate = process.env.CLIENT_CERTIFICATE;
   private clientKey = process.env.CLIENT_KEY;
@@ -233,7 +236,7 @@ export class ArventGroupService {
         .catch((error) => error);
       console.log('responseSave', responseSave);
 
-      return true;
+      return data;
     } catch (error) {
       console.log(error.response.data);
       throw new Error(error?.response?.data?.message);
