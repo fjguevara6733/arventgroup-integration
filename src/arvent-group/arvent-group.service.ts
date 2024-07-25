@@ -213,7 +213,7 @@ export class ArventGroupService {
         method: 'POST',
         url,
         data: params,
-        headers: {},
+        headers,
         httpsAgent: this.httpsAgent,
       };
       console.log('config', config);
