@@ -11,7 +11,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ArventGroupService {
-  private urlBind = process.env.environment === 'dev' ? process.env.URL_BIND : process.env.URL_BIND_PROD;
+  private urlBind =
+    process.env.environment === 'dev'
+      ? process.env.URL_BIND
+      : process.env.URL_BIND_PROD;
   private httpsAgent: https.Agent;
   private token: string;
   private timeTokenExpirate: Date;
@@ -186,7 +189,7 @@ export class ArventGroupService {
         concept: ConceptBind.VAR,
         description: 'Pago Alfred',
       };
-      console.log(params);
+      console.log('params', params);
 
       const headers = {
         Authorization: `JWT ${await this.getToken()}`,
@@ -205,7 +208,10 @@ export class ArventGroupService {
       console.log('config', config);
 
       const response = await axios(config);
+      console.log('response', response);
       const data = response.data;
+      console.log('data', data);
+
       const dataString = JSON.stringify(data);
       const responseSave = await this.arventGroupEntityManager
         .query(
@@ -216,7 +222,7 @@ export class ArventGroupService {
         .catch((error) => error);
       console.log('responseSave', responseSave);
 
-      return data;
+      return true;
     } catch (error) {
       console.log(error.response.data);
       throw new Error(error?.response?.data?.message);
