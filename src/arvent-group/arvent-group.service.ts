@@ -259,7 +259,6 @@ export class ArventGroupService {
   }
 
   async updateStatusTransactions() {
-    console.log('Actualizacion de estados');
     const data = await this.arventGroupEntityManager.query(
       'SELECT * FROM transactions WHERE status = "IN_PROGRESS"',
     );
@@ -267,10 +266,6 @@ export class ArventGroupService {
     for (const transaction of data) {
       const response = JSON.parse(transaction.response);
       const { transaction_ids } = response;
-      console.log(
-        `https://api.chronospay.io/alfred-wallet/v1/transaction/get-transaction/${transaction_ids[0]}`,
-      );
-
       const config: AxiosRequestConfig = {
         method: 'GET',
         url: `https://api.chronospay.io/alfred-wallet/v1/transaction/get-transaction/${transaction_ids[0]}`,
@@ -278,15 +273,13 @@ export class ArventGroupService {
       };
       const responseAxios = await axios(config);
       const data = responseAxios.data;
-      console.log('data', data);
-
-      const responseUpdate = await this.arventGroupEntityManager
+      const dataResponse = data.data;
+      await this.arventGroupEntityManager
         .query(
-          `UPDATE transactions SET status = '${data.status}', response = '${JSON.stringify(data)}' WHERE id = ${transaction.id}`,
+          `UPDATE transactions SET status = '${dataResponse.status}', response = '${JSON.stringify(dataResponse)}' WHERE id = ${transaction.id}`,
         )
         .then((response) => response)
         .catch((error) => error);
-      console.log('responseUpdate', responseUpdate);
     }
     return true;
   }
