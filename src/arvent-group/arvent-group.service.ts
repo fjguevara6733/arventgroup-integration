@@ -277,16 +277,18 @@ export class ArventGroupService {
         httpsAgent: this.httpsAgent,
       };
       const responseAxios = await axios(config);
-      console.log('responseAxios', responseAxios);
       const data = responseAxios.data;
       console.log('data', data);
-      await this.arventGroupEntityManager
+
+      const responseUpdate = await this.arventGroupEntityManager
         .query(
           `UPDATE transactions SET status = ${data.status}, response = '${JSON.stringify(data)}' WHERE id = '${transaction.id}'`,
         )
         .then((response) => response)
         .catch((error) => error);
+        console.log('responseUpdate', responseUpdate);
+        
     }
-    return data;
+    return true;
   }
 }
