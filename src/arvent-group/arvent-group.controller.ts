@@ -11,6 +11,7 @@ import {
 import { ArventGroupService } from './arvent-group.service';
 import { ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { DoRequestDto } from 'src/common/dto/create-arvent-group.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Controller()
 @ApiTags('arvent-group')
@@ -60,6 +61,35 @@ export class ArventGroupController {
         statusCode: HttpStatus.ACCEPTED,
         message: 'send Transaction',
         data: await this.arventGroupService.doTransaction(payload),
+      };
+    } catch (error) {
+      throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @Get('transactions-report')
+  @ApiHeader({ name: 'api-key', required: true })
+  async transactionReport() {
+    try {
+      return {
+        statusCode: HttpStatus.ACCEPTED,
+        message: 'transactions-report',
+        data: await this.arventGroupService.transactionReport(),
+      };
+    } catch (error) {
+      console.log('error transactions', error);
+
+      throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
+    }
+  }
+  // @Cron(CronExpression.EVERY_MINUTE)
+  @Get('transactions-update')
+  async updateStatusTransactions() {
+    try {
+      return {
+        statusCode: HttpStatus.ACCEPTED,
+        message: 'send Transaction',
+        data: await this.arventGroupService.updateStatusTransactions(),
       };
     } catch (error) {
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);

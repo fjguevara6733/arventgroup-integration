@@ -229,8 +229,8 @@ export class ArventGroupService {
       const dataString = JSON.stringify(data);
       const responseSave = await this.arventGroupEntityManager
         .query(
-          `INSERT INTO transactions (idTransaction,response, status)
-          VALUES ('${params.origin_id}', '${dataString}', '${data.status}')`,
+          `INSERT INTO transactions (idTransaction,response, status, email)
+          VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}')`,
         )
         .then((response) => response)
         .catch((error) => error);
@@ -241,5 +241,52 @@ export class ArventGroupService {
       console.log(error.response.data);
       throw new Error(error?.response?.data?.message);
     }
+  }
+
+  async transactionReport() {
+    const data = await this.arventGroupEntityManager.query(
+      'SELECT * FROM transactions',
+    );
+    const response = data.map((e) => {
+      return {
+        id: e.idTransaction,
+        status: e.status,
+        emailOriginDebit: e.email,
+        responseBank: JSON.parse(e.response),
+      };
+    });
+    return response;
+  }
+
+  async updateStatusTransactions() {
+    console.log('Actualizacion de estados');
+    const data = await this.arventGroupEntityManager.query(
+      'SELECT * FROM transactions WHERE status = "IN_PROGRESS"',
+    );
+
+    for (const transaction of data) {
+      const response = JSON.parse(transaction.response);
+      const { transaction_ids } = response;
+      console.log(
+        `https://api.chronospay.io/alfred-wallet/v1/transaction/get-transaction/${transaction_ids[0]}`,
+      );
+
+      const config: AxiosRequestConfig = {
+        method: 'GET',
+        url: `https://api.chronospay.io/alfred-wallet/v1/transaction/get-transaction/${transaction_ids[0]}`,
+        httpsAgent: this.httpsAgent,
+      };
+      const responseAxios = await axios(config);
+      console.log('responseAxios', responseAxios);
+      const data = responseAxios.data;
+      console.log('data', data);
+      await this.arventGroupEntityManager
+        .query(
+          `UPDATE transactions SET status = ${data.status}, response = '${JSON.stringify(data)}' WHERE id = '${transaction.id}'`,
+        )
+        .then((response) => response)
+        .catch((error) => error);
+    }
+    return data;
   }
 }
