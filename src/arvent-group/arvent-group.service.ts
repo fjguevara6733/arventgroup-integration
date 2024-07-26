@@ -282,12 +282,11 @@ export class ArventGroupService {
 
       const responseUpdate = await this.arventGroupEntityManager
         .query(
-          `UPDATE transactions SET status = ${data.status}, response = '${JSON.stringify(data)}' WHERE id = '${transaction.id}'`,
+          `UPDATE transactions SET status = '${data.status}', response = '${JSON.stringify(data)}' WHERE id = ${transaction.id}`,
         )
         .then((response) => response)
         .catch((error) => error);
-        console.log('responseUpdate', responseUpdate);
-        
+      console.log('responseUpdate', responseUpdate);
     }
     return true;
   }
