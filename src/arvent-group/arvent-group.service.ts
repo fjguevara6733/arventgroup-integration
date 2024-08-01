@@ -283,7 +283,7 @@ export class ArventGroupService {
       };
       const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transactions`;
       const config: AxiosRequestConfig = {
-        method: 'POST',
+        method: 'GET',
         url,
         headers,
         httpsAgent: this.httpsAgent,
