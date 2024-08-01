@@ -179,4 +179,18 @@ export class ArventGroupController {
         res.status(HttpStatus.BAD_REQUEST).send(response);
       });
   }
+
+  // @Cron(CronExpression.EVERY_5_MINUTES)
+  @Get('transactions-get-credits')
+  async updateStatusTransactionsCredit() {
+    try {
+      return {
+        statusCode: HttpStatus.ACCEPTED,
+        message: 'transactions-get-credits',
+        data: await this.arventGroupService.updateStatusTransactionsCredit(),
+      };
+    } catch (error) {
+      throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
+    }
+  }
 }

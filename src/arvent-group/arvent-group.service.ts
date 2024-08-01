@@ -411,7 +411,7 @@ export class ArventGroupService {
    * @param isCalled
    * @returns
    */
-  async stateBalance(where, isCalled = false) {
+  async stateBalance(where = '', isCalled = false) {
     if (isCalled) {
       const emails = this.datos.find(
         (e) => e.email.toLocaleLowerCase() === where.toLocaleLowerCase(),
@@ -474,16 +474,67 @@ export class ArventGroupService {
       .then((response) => response)
       .catch((error) => error);
     console.log(query);
-
-    const newBalance = Number(balances.amount) + Number(body.amount);
-    const queryUpdate = await this.arventGroupEntityManager
-      .query(
-        ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balances.id}`,
-      )
-      .then((response) => response)
-      .catch((error) => error);
-    console.log(queryUpdate);
-    // return newBalance;
     return response;
+  }
+
+  /**
+   * @method updateStatusTransactions
+   * Servicio para actualizar los estados de las transacciones realizadas
+   * @returns
+   */
+  async updateStatusTransactionsCredit() {
+    const data = await this.arventGroupEntityManager.query(
+      'SELECT * FROM transactions WHERE status = "PENDING" and type = "credit"',
+    );
+    const balances = await this.stateBalance().then((response) => response);
+    console.log(data);
+    console.log(balances);
+
+    for (const transaction of data) {
+      const responseTransaction = JSON.parse(transaction.response);
+      const { transaction_ids } = responseTransaction;
+      const emails = this.datos.find(
+        (e) =>
+          e.email.toLocaleLowerCase() === transaction.email.toLocaleLowerCase(),
+      );
+      const balanceAccount = balances.find((e) => e.cvu === emails.cvu);
+      const headers = {
+        Authorization: `JWT ${await this.getToken()}`,
+      };
+      const url: string = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/DEBIN/${transaction_ids[0]}`;
+      const config: AxiosRequestConfig = {
+        method: 'GET',
+        url,
+        headers,
+        httpsAgent: this.httpsAgent,
+      };
+
+      const response = await axios(config)
+        .then((response) => response.data)
+        .catch((error) => {
+          console.log(error.response.data);
+          throw error?.response?.data?.message;
+        });
+      console.log(response);
+      const query = await this.arventGroupEntityManager
+        .query(
+          `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
+          VALUES ('${transaction.idTransaction}', '${transaction.response}', '${response.status}', '${transaction.email}','${response.start_date.replace('T', ' ').replace('Z', '')}', "credit")`,
+        )
+        .then((response) => response)
+        .catch((error) => error);
+      console.log(query);
+      const { charge } = response;
+      const newBalance =
+        Number(balanceAccount.amount) + Number(charge.value.amount);
+      const queryUpdate = await this.arventGroupEntityManager
+        .query(
+          ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balances.id}`,
+        )
+        .then((response) => response)
+        .catch((error) => error);
+      console.log(queryUpdate);
+    }
+    return true;
   }
 }
