@@ -300,8 +300,7 @@ export class ArventGroupService {
     console.log('response', response);
     const accountCredits = [];
     const data = [];
-    let values = '';
-    let count = 0;
+    const values = [];
     for (const transaction of response) {
       const { this_account } = transaction;
       const { account_routing } = this_account;
@@ -335,18 +334,37 @@ export class ArventGroupService {
       );
       if (searchCVU) {
         const dataString = JSON.stringify(transaction);
-        values += `('${searchCVU.id}', '${dataString}', 'COMPLETED', '${searchCVU.email}', ${new Date()}, "credit")`;
-        values += data.length > 1 && data.length < count ? ',' : '';
+        values.push(
+          `('${transaction.id}', '${dataString}', 'COMPLETED', '${searchCVU.email}','${details.completed.replace('T', ' ').replace('Z', '')}', "credit")`,
+        );
       }
-      count++;
     }
     await this.arventGroupEntityManager
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ${values}`,
+          VALUES ${values.join(',')}`,
       )
       .then((response) => response)
       .catch((error) => error);
+
+    const balances = await this.arventGroupEntityManager.query(
+      'SELECT * FROM balance',
+    );
+    for (const account of accountCredits) {
+      const dataBalance = balances.find((e) => e.cvu === account.cvu);
+      if (dataBalance) {
+        const amountBD = Number(dataBalance.amount);
+        const total = account.amount + amountBD;
+        const update = await this.arventGroupEntityManager
+          .query(
+            `UPDATE balance SET amount = '${total}' WHERE id = ${dataBalance.id}`,
+          )
+          .then((response) => response)
+          .catch((error) => error);
+        console.log(update);
+      }
+    }
+
     return accountCredits;
   }
 }
