@@ -203,15 +203,11 @@ export class ArventGroupService {
         concept: ConceptBind.VAR,
         description: 'Pago Alfred',
       };
-      console.log('params', params);
 
       const headers = {
         Authorization: `JWT ${await this.getToken()}`,
       };
-      console.log('headers', headers);
       const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/TRANSFER-CVU/transaction-requests`;
-
-      console.log('url', url);
       const config: AxiosRequestConfig = {
         method: 'POST',
         url,
@@ -219,22 +215,18 @@ export class ArventGroupService {
         headers,
         httpsAgent: this.httpsAgent,
       };
-      console.log('config', config);
 
       const response = await axios(config);
-      console.log('response', response);
       const data = response.data;
-      console.log('data', data);
 
       const dataString = JSON.stringify(data);
-      const responseSave = await this.arventGroupEntityManager
+      await this.arventGroupEntityManager
         .query(
           `INSERT INTO transactions (idTransaction,response, status, email)
           VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}')`,
         )
         .then((response) => response)
         .catch((error) => error);
-      console.log('responseSave', responseSave);
 
       return data;
     } catch (error) {
@@ -282,5 +274,330 @@ export class ArventGroupService {
         .catch((error) => error);
     }
     return true;
+  }
+
+  async creditTransactions() {
+    const headers = {
+      Authorization: `JWT ${await this.getToken()}`,
+      obp_status: "",
+      obp_limit: '50',
+      obp_offset: '0',
+      obp_from_date: '2024-07-29',
+      obp_to_date: '2024-07-31',
+      obp_origin: 'TRANSFERENCIAS_RECIBIDAS',
+    };
+    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transactions`;
+    const config: AxiosRequestConfig = {
+      method: 'POST',
+      url,
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
+
+    const response = await axios(config);
+    const data = response.data;
+    console.log('data', data);
+
+    // const data = [
+    //   {
+    //     id: 'NSBT-1-62-685741-65-1-20240729-10-10-558-1',
+    //     type: 'TRANSFER',
+    //     from: {
+    //       bank_id: '322',
+    //       account_id: '20-1-685741-1-5',
+    //     },
+    //     counterparty: {
+    //       id: '23447081164',
+    //       name: 'MACHUCA MELANY ROCIO',
+    //       id_type: 'CUIT_CUIL',
+    //       bank_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //       account_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //     },
+    //     details: {
+    //       type: 'TRANSFERENCIAS_RECIBIDAS',
+    //       origin_credit: {
+    //         cvu: '0000058100000000034579',
+    //         cuit: '30717616657',
+    //       },
+    //       origin_debit: {
+    //         cvu: '0000013000032111172523',
+    //         cuit: '23447081164',
+    //       },
+    //     },
+    //     transaction_ids: [
+    //       '7L8GYKNXR7PK14QWNMPRZ5',
+    //       'NSBT-1-62-685741-65-1-20240729-10-10-558-1',
+    //     ],
+    //     status: 'COMPLETED',
+    //     start_date: '2024-07-29T22:21:05.000Z',
+    //     end_date: '2024-07-29T03:00:00.000Z',
+    //     charge: {
+    //       summary: 'VAR',
+    //       value: {
+    //         currency: 'ARS',
+    //         amount: 15575.6,
+    //       },
+    //     },
+    //   },
+    //   {
+    //     id: 'NSBT-1-3-685741-65-1-20240729-13-10-4363-1',
+    //     type: 'TRANSFER',
+    //     from: {
+    //       bank_id: '322',
+    //       account_id: '20-1-685741-1-5',
+    //     },
+    //     counterparty: {
+    //       id: '30716788543',
+    //       name: '',
+    //       id_type: 'CUIT_CUIL',
+    //       bank_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //       account_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //     },
+    //     details: {
+    //       type: 'TRANSFERENCIAS_RECIBIDAS',
+    //       origin_credit: {
+    //         cvu: '0000058100000000034579',
+    //         cuit: '30717616657',
+    //       },
+    //       origin_debit: {
+    //         cvu: '3220001805006856990051',
+    //         cuit: '30716788543',
+    //       },
+    //     },
+    //     transaction_ids: [
+    //       '46YGOW9MJ741LZ0Y9EXD8J',
+    //       'NSBT-1-3-685741-65-1-20240729-13-10-4363-1',
+    //     ],
+    //     status: 'COMPLETED',
+    //     start_date: '2024-07-29T16:10:35.000Z',
+    //     end_date: '2024-07-29T03:00:00.000Z',
+    //     charge: {
+    //       summary: 'VAR',
+    //       value: {
+    //         currency: 'ARS',
+    //         amount: 8814.35,
+    //       },
+    //     },
+    //   },
+    //   {
+    //     id: 'NSBT-1-62-685741-65-1-20240729-10-10-558-1',
+    //     type: 'TRANSFER',
+    //     from: {
+    //       bank_id: '322',
+    //       account_id: '20-1-685741-1-5',
+    //     },
+    //     counterparty: {
+    //       id: '23447081164',
+    //       name: 'MACHUCA MELANY ROCIO',
+    //       id_type: 'CUIT_CUIL',
+    //       bank_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //       account_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //     },
+    //     details: {
+    //       type: 'TRANSFERENCIAS_RECIBIDAS',
+    //       origin_credit: {
+    //         cvu: '0000058100000000010919',
+    //         cuit: '30717616657',
+    //       },
+    //       origin_debit: {
+    //         cvu: '0000013000032111172523',
+    //         cuit: '23447081164',
+    //       },
+    //     },
+    //     transaction_ids: [
+    //       '7L8GYKNXR7PK14QWNMPRZ5',
+    //       'NSBT-1-62-685741-65-1-20240729-10-10-558-1',
+    //     ],
+    //     status: 'COMPLETED',
+    //     start_date: '2024-07-29T22:21:05.000Z',
+    //     end_date: '2024-07-29T03:00:00.000Z',
+    //     charge: {
+    //       summary: 'VAR',
+    //       value: {
+    //         currency: 'ARS',
+    //         amount: 15575.6,
+    //       },
+    //     },
+    //   },
+    //   {
+    //     id: 'NSBT-1-3-685741-65-1-20240729-13-10-4363-1',
+    //     type: 'TRANSFER',
+    //     from: {
+    //       bank_id: '322',
+    //       account_id: '20-1-685741-1-5',
+    //     },
+    //     counterparty: {
+    //       id: '30716788543',
+    //       name: '',
+    //       id_type: 'CUIT_CUIL',
+    //       bank_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //       account_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //     },
+    //     details: {
+    //       type: 'TRANSFERENCIAS_RECIBIDAS',
+    //       origin_credit: {
+    //         cvu: '0000058100000000010919',
+    //         cuit: '30717616657',
+    //       },
+    //       origin_debit: {
+    //         cvu: '3220001805006856990051',
+    //         cuit: '30716788543',
+    //       },
+    //     },
+    //     transaction_ids: [
+    //       '46YGOW9MJ741LZ0Y9EXD8J',
+    //       'NSBT-1-3-685741-65-1-20240729-13-10-4363-1',
+    //     ],
+    //     status: 'COMPLETED',
+    //     start_date: '2024-07-29T16:10:35.000Z',
+    //     end_date: '2024-07-29T03:00:00.000Z',
+    //     charge: {
+    //       summary: 'VAR',
+    //       value: {
+    //         currency: 'ARS',
+    //         amount: 8814.35,
+    //       },
+    //     },
+    //   },
+    //   {
+    //     id: 'NSBT-1-62-685741-65-1-20240729-10-10-558-1',
+    //     type: 'TRANSFER',
+    //     from: {
+    //       bank_id: '322',
+    //       account_id: '20-1-685741-1-5',
+    //     },
+    //     counterparty: {
+    //       id: '23447081164',
+    //       name: 'MACHUCA MELANY ROCIO',
+    //       id_type: 'CUIT_CUIL',
+    //       bank_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //       account_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //     },
+    //     details: {
+    //       type: 'TRANSFERENCIAS_RECIBIDAS',
+    //       origin_credit: {
+    //         cvu: '0000058100000000034579',
+    //         cuit: '30717616657',
+    //       },
+    //       origin_debit: {
+    //         cvu: '0000013000032111172523',
+    //         cuit: '23447081164',
+    //       },
+    //     },
+    //     transaction_ids: [
+    //       '7L8GYKNXR7PK14QWNMPRZ5',
+    //       'NSBT-1-62-685741-65-1-20240729-10-10-558-1',
+    //     ],
+    //     status: 'COMPLETED',
+    //     start_date: '2024-07-29T22:21:05.000Z',
+    //     end_date: '2024-07-29T03:00:00.000Z',
+    //     charge: {
+    //       summary: 'VAR',
+    //       value: {
+    //         currency: 'ARS',
+    //         amount: 15575.6,
+    //       },
+    //     },
+    //   },
+    //   {
+    //     id: 'NSBT-1-3-685741-65-1-20240729-13-10-4363-1',
+    //     type: 'TRANSFER',
+    //     from: {
+    //       bank_id: '322',
+    //       account_id: '20-1-685741-1-5',
+    //     },
+    //     counterparty: {
+    //       id: '30716788543',
+    //       name: '',
+    //       id_type: 'CUIT_CUIL',
+    //       bank_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //       account_routing: {
+    //         scheme: 'UNAVAILABLE',
+    //         address: '',
+    //       },
+    //     },
+    //     details: {
+    //       type: 'TRANSFERENCIAS_RECIBIDAS',
+    //       origin_credit: {
+    //         cvu: '0000058100000000034579',
+    //         cuit: '30717616657',
+    //       },
+    //       origin_debit: {
+    //         cvu: '3220001805006856990051',
+    //         cuit: '30716788543',
+    //       },
+    //     },
+    //     transaction_ids: [
+    //       '46YGOW9MJ741LZ0Y9EXD8J',
+    //       'NSBT-1-3-685741-65-1-20240729-13-10-4363-1',
+    //     ],
+    //     status: 'COMPLETED',
+    //     start_date: '2024-07-29T16:10:35.000Z',
+    //     end_date: '2024-07-29T03:00:00.000Z',
+    //     charge: {
+    //       summary: 'VAR',
+    //       value: {
+    //         currency: 'ARS',
+    //         amount: 8814.35,
+    //       },
+    //     },
+    //   },
+    // ];
+    const accountCredits = [];
+    // for (const transaction of data) {
+    //   const { details, charge } = transaction;
+    //   const { origin_credit } = details;
+    //   const { value } = charge;
+    //   const index = accountCredits.findIndex(
+    //     (e) => e.cvu === origin_credit.cvu,
+    //   );
+    //   if (index === -1) {
+    //     accountCredits.push({
+    //       cvu: origin_credit.cvu,
+    //       amount: value.amount,
+    //       count: 1
+    //     });
+    //   } else {
+    //     accountCredits[index].amount =
+    //       Number(accountCredits[index].amount) + Number(value.amount);
+    //       accountCredits[index].count =
+    //         Number(accountCredits[index].count) + 1;
+    //   }
+    // }
+
+    return accountCredits;
   }
 }

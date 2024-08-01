@@ -95,4 +95,17 @@ export class ArventGroupController {
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
     }
   }
+
+  @Get('transactions-credit')
+  async creditTransactions() {
+    try {
+      return {
+        statusCode: HttpStatus.ACCEPTED,
+        message: 'send Transaction',
+        data: await this.arventGroupService.creditTransactions(),
+      };
+    } catch (error) {
+      throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
+    }
+  }
 }
