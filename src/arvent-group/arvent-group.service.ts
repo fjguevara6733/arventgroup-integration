@@ -41,7 +41,7 @@ export class ArventGroupService {
       cvu: '0000058100000000034579',
     },
     {
-      email: 'Hola@finpact.org',
+      email: 'hola@finpact.org',
       id: 256,
       cvu: '0000058100000000010919',
     },
@@ -290,6 +290,7 @@ export class ArventGroupService {
       };
 
       const response = await axios(config);
+      console.log('response', response);
       const data = response.data;
       console.log('data', data);
       return data
