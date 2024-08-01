@@ -466,22 +466,24 @@ export class ArventGroupService {
 
     console.log(response);
     const { details } = response;
-    await this.arventGroupEntityManager
+    const query = await this.arventGroupEntityManager
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ('${params.origin_id}', '${JSON.stringify(body)}', 'COMPLETED', '${emails.email}','${details.completed.replace('T', ' ').replace('Z', '')}', "credit")`,
+          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', 'COMPLETED', '${emails.email}','${details.completed.replace('T', ' ').replace('Z', '')}', "credit")`,
       )
       .then((response) => response)
       .catch((error) => error);
+    console.log(query);
+
     const newBalance = Number(balances.amount) + Number(body.amount);
-    await this.arventGroupEntityManager
+    const queryUpdate = await this.arventGroupEntityManager
       .query(
         ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balances.id}`,
       )
       .then((response) => response)
       .catch((error) => error);
-    console.log('body', body);
-    return newBalance;
-    // return response.data;
+    console.log(queryUpdate);
+    // return newBalance;
+    return response;
   }
 }
