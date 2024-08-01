@@ -14,6 +14,7 @@ import { ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   arventGetTransactionsCredit,
   DoRequestDto,
+  DoRequestDtoDebin,
 } from 'src/common/dto/create-arvent-group.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Response } from 'express';
@@ -103,7 +104,7 @@ export class ArventGroupController {
         res.status(HttpStatus.BAD_REQUEST).send(response);
       });
   }
-  // @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   @Get('transactions-update')
   async updateStatusTransactions() {
     try {
@@ -146,6 +147,33 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error balances',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Post('get-transaction-debin')
+  @ApiHeader({ name: 'api-key', required: true })
+  async createDeposit(
+    @Body() payload: DoRequestDtoDebin,
+    @Res() res: Response,
+  ) {
+    console.log("@Post('get-transaction-debin')");
+    await this.arventGroupService
+      .createDeposit(payload)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'get Transaction',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error get Transaction',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);

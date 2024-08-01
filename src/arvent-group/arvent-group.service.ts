@@ -3,6 +3,7 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import {
   arventGetTransactionsCredit,
   DoRequestDto,
+  DoRequestDtoDebin,
 } from 'src/common/dto/create-arvent-group.dto';
 import { BindRequestInterface } from 'src/common/dto/create-arvent-group.interface.';
 import { CoinsFiat, ConceptBind } from 'src/common/enum';
@@ -195,9 +196,11 @@ export class ArventGroupService {
     const emails = this.datos.find(
       (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
     );
-    const balances = await this.stateBalance(`WHERE cvu=${emails.cvu}`);
+    const balances = await this.stateBalance(`WHERE cvu=${emails.cvu}`).then(
+      (response) => response[0],
+    );
 
-    if (balances[0].amount < amount) throw 'Fondos insuficientes';
+    if (balances.amount < amount) throw 'Fondos insuficientes';
 
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
@@ -240,6 +243,20 @@ export class ArventGroupService {
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction)
           VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', ${new Date()})`,
+      )
+      .then((response) => response)
+      .catch((error) => error);
+    await this.arventGroupEntityManager
+      .query(
+        `INSERT INTO payments (idTransaction,response, status, email, dateTransaction)
+          VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', ${new Date()})`,
+      )
+      .then((response) => response)
+      .catch((error) => error);
+    const newBalance = Number(balances) - Number(body.amount);
+    await this.arventGroupEntityManager
+      .query(
+        ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balances.id}`,
       )
       .then((response) => response)
       .catch((error) => error);
@@ -404,5 +421,67 @@ export class ArventGroupService {
     return await this.arventGroupEntityManager.query(
       `SELECT * FROM balance ${where}`,
     );
+  }
+
+  async createDeposit(body: DoRequestDtoDebin) {
+    const { originCbu, amount, email } = body;
+    const emails = this.datos.find(
+      (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
+    );
+    const balances = await this.stateBalance(`WHERE cvu=${emails.cvu}`).then(
+      (response) => response[0],
+    );
+    console.log(balances);
+
+    const params: BindRequestInterface = {
+      origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
+      value: {
+        currency: CoinsFiat.ARS,
+        amount: Number(amount).toFixed(2),
+      },
+      to: {
+        cbu: originCbu,
+      },
+      concept: ConceptBind.VAR,
+      expiration: 20,
+    };
+    const headers = {
+      Authorization: `JWT ${await this.getToken()}`,
+    };
+    const url: string = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/DEBIN/transaction-requests`;
+    const config: AxiosRequestConfig = {
+      method: 'POST',
+      url,
+      data: params,
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
+
+    const response = await axios(config)
+      .then((response) => response.data)
+      .catch((error) => {
+        console.log(error.response.data);
+        throw error?.response?.data?.message;
+      });
+
+    console.log(response);
+    const { details } = response;
+    await this.arventGroupEntityManager
+      .query(
+        `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
+          VALUES ('${params.origin_id}', '${JSON.stringify(body)}', 'COMPLETED', '${emails.email}','${details.completed.replace('T', ' ').replace('Z', '')}', "credit")`,
+      )
+      .then((response) => response)
+      .catch((error) => error);
+    const newBalance = Number(balances.amount) + Number(body.amount);
+    await this.arventGroupEntityManager
+      .query(
+        ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balances.id}`,
+      )
+      .then((response) => response)
+      .catch((error) => error);
+    console.log('body', body);
+    return newBalance;
+    // return response.data;
   }
 }

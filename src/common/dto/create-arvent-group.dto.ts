@@ -73,3 +73,20 @@ export class arventGetTransactionsCredit {
   @IsNotEmpty()
   obp_origin: string;
 }
+
+export class DoRequestDtoDebin {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  originCbu: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  amount: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  email: string;
+}
