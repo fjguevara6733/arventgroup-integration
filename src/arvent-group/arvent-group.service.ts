@@ -62,7 +62,6 @@ export class ArventGroupService {
     const emails = this.datos.find(
       (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
     );
-    console.log(emails);
 
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
     const query = `SELECT balance,'ARS' FROM cvu_accounts where cvu=${Number(emails.cvu)}`;
@@ -128,14 +127,11 @@ export class ArventGroupService {
         password: this.PASSWORD_BIND,
       };
 
-      console.log({ data });
-
       const config = {
         method: 'post',
         url: this.urlBind + '/login/jwt',
         data,
       };
-      console.log('config', config);
 
       if (this.clientCertificate && this.clientKey) {
         this.httpsAgent = new https.Agent({
@@ -145,10 +141,8 @@ export class ArventGroupService {
 
         config['httpsAgent'] = this.httpsAgent;
       }
-      console.log('config 2', config);
 
       const response = await axios(config);
-      console.log('response LOGIN', response);
       const timeExpire = new Date(
         new Date().getTime() + response.data.expires_in * 1000,
       );
@@ -277,28 +271,31 @@ export class ArventGroupService {
   }
 
   async creditTransactions() {
-    const headers = {
-      Authorization: `JWT ${await this.getToken()}`,
-      // obp_status: "",
-      // obp_limit: '50',
-      // obp_offset: '0',
-      // obp_from_date: '2024-07-29',
-      // obp_to_date: '2024-07-31',
-      // obp_origin: 'TRANSFERENCIAS_RECIBIDAS',
-    };
-    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transactions`;
-    const config: AxiosRequestConfig = {
-      method: 'POST',
-      url,
-      headers,
-      httpsAgent: this.httpsAgent,
-    };
+    try {
+      const headers = {
+        Authorization: `JWT ${await this.getToken()}`,
+        // obp_status: "",
+        obp_limit: '50',
+        // obp_offset: '0',
+        // obp_from_date: '2024-07-29',
+        // obp_to_date: '2024-07-31',
+        // obp_origin: 'TRANSFERENCIAS_RECIBIDAS',
+      };
+      const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transactions`;
+      const config: AxiosRequestConfig = {
+        method: 'POST',
+        url,
+        headers,
+        httpsAgent: this.httpsAgent,
+      };
 
-    const response = await axios(config);
-    console.log('response', response);
-    const data = response.data;
-    console.log('data', data);
-
+      const response = await axios(config);
+      console.log('response', response);
+      const data = response.data;
+      console.log('data', data);
+    } catch (error) {
+      console.log(error);
+    }
     // const data = [
     //   {
     //     id: 'NSBT-1-62-685741-65-1-20240729-10-10-558-1',
