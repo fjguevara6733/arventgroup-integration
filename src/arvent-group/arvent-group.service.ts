@@ -465,11 +465,11 @@ export class ArventGroupService {
       });
 
     console.log(response);
-    const { details } = response;
+    const { start_date } = response;
     const query = await this.arventGroupEntityManager
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', 'COMPLETED', '${emails.email}','${details.completed.replace('T', ' ').replace('Z', '')}', "credit")`,
+          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', '${response.status}', '${emails.email}','${start_date.replace('T', ' ').replace('Z', '')}', "credit")`,
       )
       .then((response) => response)
       .catch((error) => error);
