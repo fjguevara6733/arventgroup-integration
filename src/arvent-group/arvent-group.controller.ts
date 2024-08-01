@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ArventGroupService } from './arvent-group.service';
 import { ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { DoRequestDto } from 'src/common/dto/create-arvent-group.dto';
+import { arventGetTransactionsCredit, DoRequestDto } from 'src/common/dto/create-arvent-group.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Controller()
@@ -96,13 +96,13 @@ export class ArventGroupController {
     }
   }
 
-  @Get('transactions-credit')
-  async creditTransactions() {
+  @Post('transactions-credit')
+  async creditTransactions(@Body() payload: arventGetTransactionsCredit) {
     try {
       return {
         statusCode: HttpStatus.ACCEPTED,
         message: 'send Transaction',
-        data: await this.arventGroupService.creditTransactions(),
+        data: await this.arventGroupService.creditTransactions(payload),
       };
     } catch (error) {
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);

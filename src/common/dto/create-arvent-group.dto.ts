@@ -46,3 +46,30 @@ export class DoRequestDto {
   @IsNotEmpty()
   email: string;
 }
+
+export class arventGetTransactionsCredit {
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  obp_limit: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  obp_offset: number;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  obp_from_date: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  obp_to_date: string;
+
+  @ApiProperty({ default: 'TRANSFERENCIAS_RECIBIDAS' })
+  @IsString()
+  @IsNotEmpty()
+  obp_origin: string;
+}

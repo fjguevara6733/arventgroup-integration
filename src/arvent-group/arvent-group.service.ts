@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { DoRequestDto } from 'src/common/dto/create-arvent-group.dto';
+import { arventGetTransactionsCredit, DoRequestDto } from 'src/common/dto/create-arvent-group.dto';
 import { BindRequestInterface } from 'src/common/dto/create-arvent-group.interface.';
 import { CoinsFiat, ConceptBind } from 'src/common/enum';
 import { EntityManager } from 'typeorm';
@@ -270,16 +270,11 @@ export class ArventGroupService {
     return true;
   }
 
-  async creditTransactions() {
+  async creditTransactions(payload: arventGetTransactionsCredit) {
     try {
       const headers = {
         Authorization: `JWT ${await this.getToken()}`,
-        // obp_status: "",
-        obp_limit: 100,
-        obp_offset: 0,
-        obp_from_date: '2024-07-30',
-        obp_to_date: '2024-07-30',
-        obp_origin: 'TRANSFERENCIAS_RECIBIDAS',
+        ...payload
       };
       const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transactions`;
       const config: AxiosRequestConfig = {
@@ -290,7 +285,6 @@ export class ArventGroupService {
       };
 
       const response = await axios(config);
-      console.log('response', response);
       const data = response.data;
       console.log('data', data);
       return data
