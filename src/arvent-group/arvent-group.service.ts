@@ -303,7 +303,7 @@ export class ArventGroupService {
     for (const transaction of response) {
       const { this_account } = transaction;
       const { account_routing } = this_account;
-      const searchCVU = accountCredits.find(
+      const searchCVU = this.datos.find(
         (e) => e.cvu === account_routing.address,
       );
       if (searchCVU) {
