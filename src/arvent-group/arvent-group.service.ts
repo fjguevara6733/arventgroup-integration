@@ -301,6 +301,7 @@ export class ArventGroupService {
     const accountCredits = [];
     const data = [];
     let values = '';
+    let count = 0;
     for (const transaction of response) {
       const { this_account } = transaction;
       const { account_routing } = this_account;
@@ -335,7 +336,9 @@ export class ArventGroupService {
       if (searchCVU) {
         const dataString = JSON.stringify(transaction);
         values += `('${searchCVU.id}', '${dataString}', 'COMPLETED', '${searchCVU.email}', ${new Date()}, "credit")`;
+        values += data.length > 1 && data.length < count ? ',' : '';
       }
+      count++;
     }
     await this.arventGroupEntityManager
       .query(
