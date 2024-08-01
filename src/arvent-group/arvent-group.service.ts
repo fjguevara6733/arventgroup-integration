@@ -293,6 +293,7 @@ export class ArventGroupService {
       console.log('response', response);
       const data = response.data;
       console.log('data', data);
+      return data
     } catch (error) {
       console.log(error);
     }
