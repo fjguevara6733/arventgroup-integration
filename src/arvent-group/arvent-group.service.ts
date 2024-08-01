@@ -185,56 +185,60 @@ export class ArventGroupService {
   }
 
   async doTransaction(body: DoRequestDto) {
-    try {
-      const { destinationCbu, amount, email } = body;
-      const emails = this.datos.find(
-        (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
-      );
-      const params: BindRequestInterface = {
-        origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
-        origin_debit: {
-          cvu: emails.cvu,
-        },
-        value: {
-          currency: CoinsFiat.ARS,
-          amount: Number(amount).toFixed(2),
-        },
-        to: {
-          cbu: destinationCbu,
-        },
-        concept: ConceptBind.VAR,
-        description: 'Pago Alfred',
-      };
+    const { destinationCbu, amount, email } = body;
+    const emails = this.datos.find(
+      (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
+    );
+    const balances = await this.stateBalance(`WHERE cvu=${emails.cvu}`);
 
-      const headers = {
-        Authorization: `JWT ${await this.getToken()}`,
-      };
-      const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/TRANSFER-CVU/transaction-requests`;
-      const config: AxiosRequestConfig = {
-        method: 'POST',
-        url,
-        data: params,
-        headers,
-        httpsAgent: this.httpsAgent,
-      };
+    if (balances[0].amount < amount) throw 'Fondos insuficientes';
 
-      const response = await axios(config);
-      const data = response.data;
+    const params: BindRequestInterface = {
+      origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
+      origin_debit: {
+        cvu: emails.cvu,
+      },
+      value: {
+        currency: CoinsFiat.ARS,
+        amount: Number(amount).toFixed(2),
+      },
+      to: {
+        cbu: destinationCbu,
+      },
+      concept: ConceptBind.VAR,
+      description: 'Pago Alfred',
+    };
 
-      const dataString = JSON.stringify(data);
-      await this.arventGroupEntityManager
-        .query(
-          `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction)
+    const headers = {
+      Authorization: `JWT ${await this.getToken()}`,
+    };
+    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/TRANSFER-CVU/transaction-requests`;
+    const config: AxiosRequestConfig = {
+      method: 'POST',
+      url,
+      data: params,
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
+
+    const response = await axios(config)
+      .then((response) => response)
+      .catch((error) => {
+        console.log(error.response.data);
+        throw error?.response?.data?.message;
+      });
+    const data = response.data;
+
+    const dataString = JSON.stringify(data);
+    await this.arventGroupEntityManager
+      .query(
+        `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction)
           VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', ${new Date()})`,
-        )
-        .then((response) => response)
-        .catch((error) => error);
+      )
+      .then((response) => response)
+      .catch((error) => error);
 
-      return data;
-    } catch (error) {
-      console.log(error.response.data);
-      throw new Error(error?.response?.data?.message);
-    }
+    return data;
   }
 
   async transactionReport() {
@@ -347,9 +351,7 @@ export class ArventGroupService {
       .then((response) => response)
       .catch((error) => error);
 
-    const balances = await this.arventGroupEntityManager.query(
-      'SELECT * FROM balance',
-    );
+    const balances = await this.stateBalance('');
     for (const account of accountCredits) {
       const dataBalance = balances.find((e) => e.cvu === account.cvu);
       if (dataBalance) {
@@ -366,5 +368,17 @@ export class ArventGroupService {
     }
 
     return accountCredits;
+  }
+
+  async stateBalance(where, isCalled = false) {
+    if (isCalled) {
+      const emails = this.datos.find(
+        (e) => e.email.toLocaleLowerCase() === where.toLocaleLowerCase(),
+      );
+      where = `WHERE cvu = ${emails.cvu}`;
+    }
+    return await this.arventGroupEntityManager.query(
+      `SELECT * FROM balance ${where}`,
+    );
   }
 }

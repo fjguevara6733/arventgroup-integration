@@ -7,11 +7,16 @@ import {
   Req,
   Body,
   Post,
+  Res,
 } from '@nestjs/common';
 import { ArventGroupService } from './arvent-group.service';
 import { ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { arventGetTransactionsCredit, DoRequestDto } from 'src/common/dto/create-arvent-group.dto';
+import {
+  arventGetTransactionsCredit,
+  DoRequestDto,
+} from 'src/common/dto/create-arvent-group.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { Response } from 'express';
 
 @Controller()
 @ApiTags('arvent-group')
@@ -54,33 +59,49 @@ export class ArventGroupController {
 
   @Post('send-transaction')
   @ApiHeader({ name: 'api-key', required: true })
-  async sendTransaction(@Body() payload: DoRequestDto) {
-    try {
-      console.log("@Post('send-transaction')");
-      return {
-        statusCode: HttpStatus.ACCEPTED,
-        message: 'send Transaction',
-        data: await this.arventGroupService.doTransaction(payload),
-      };
-    } catch (error) {
-      throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
-    }
+  async sendTransaction(@Body() payload: DoRequestDto, @Res() res: Response) {
+    console.log("@Post('send-transaction')");
+    await this.arventGroupService
+      .doTransaction(payload)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'send Transaction',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error send Transaction',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
   }
 
   @Get('transactions-report')
   @ApiHeader({ name: 'api-key', required: true })
-  async transactionReport() {
-    try {
-      return {
-        statusCode: HttpStatus.ACCEPTED,
-        message: 'transactions-report',
-        data: await this.arventGroupService.transactionReport(),
-      };
-    } catch (error) {
-      console.log('error transactions', error);
-
-      throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
-    }
+  async transactionReport(@Res() res: Response) {
+    await this.arventGroupService
+      .transactionReport()
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'transactions report',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error transactions report',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
   }
   // @Cron(CronExpression.EVERY_MINUTE)
   @Get('transactions-update')
@@ -107,5 +128,27 @@ export class ArventGroupController {
     } catch (error) {
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @Get('balances/:email')
+  async stateBalance(@Param('email') email: string, @Res() res: Response) {
+    await this.arventGroupService
+      .stateBalance(email, true)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'balances',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error balances',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
   }
 }
