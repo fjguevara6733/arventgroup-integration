@@ -184,6 +184,12 @@ export class ArventGroupService {
     return this.token;
   }
 
+  /**
+   * @method doTransaction
+   * Servicio para generar el pay-out
+   * @param body
+   * @returns
+   */
   async doTransaction(body: DoRequestDto) {
     const { destinationCbu, amount, email } = body;
     const emails = this.datos.find(
@@ -241,6 +247,11 @@ export class ArventGroupService {
     return data;
   }
 
+  /**
+   * @method transactionReport
+   * Servicio para listar las transacciones
+   * @returns
+   */
   async transactionReport() {
     const data = await this.arventGroupEntityManager.query(
       'SELECT * FROM transactions',
@@ -256,6 +267,11 @@ export class ArventGroupService {
     return response;
   }
 
+  /**
+   * @method updateStatusTransactions
+   * Servicio para actualizar los estados de las transacciones realizadas
+   * @returns
+   */
   async updateStatusTransactions() {
     const data = await this.arventGroupEntityManager.query(
       'SELECT * FROM transactions WHERE status = "IN_PROGRESS"',
@@ -282,7 +298,11 @@ export class ArventGroupService {
     return true;
   }
 
+  //tentiva de su uso completo
   async creditTransactions(payload: arventGetTransactionsCredit) {
+    const accountCredits = [];
+    const data = [];
+    const values = [];
     const headers = {
       Authorization: `JWT ${await this.getToken()}`,
       ...payload,
@@ -301,10 +321,7 @@ export class ArventGroupService {
         console.log(error.response.data);
         throw new Error(error?.response?.data?.message);
       });
-    console.log('response', response);
-    const accountCredits = [];
-    const data = [];
-    const values = [];
+
     for (const transaction of response) {
       const { this_account } = transaction;
       const { account_routing } = this_account;
@@ -370,6 +387,13 @@ export class ArventGroupService {
     return accountCredits;
   }
 
+  /**
+   * @method stateBalance
+   * Servicio para obtener los balances
+   * @param where
+   * @param isCalled
+   * @returns
+   */
   async stateBalance(where, isCalled = false) {
     if (isCalled) {
       const emails = this.datos.find(
