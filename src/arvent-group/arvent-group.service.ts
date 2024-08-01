@@ -275,11 +275,11 @@ export class ArventGroupService {
       const headers = {
         Authorization: `JWT ${await this.getToken()}`,
         // obp_status: "",
-        obp_limit: '50',
-        // obp_offset: '0',
-        // obp_from_date: '2024-07-29',
-        // obp_to_date: '2024-07-31',
-        // obp_origin: 'TRANSFERENCIAS_RECIBIDAS',
+        obp_limit: '10',
+        obp_offset: '0',
+        obp_from_date: '2024-07-29',
+        obp_to_date: '2024-07-31',
+        obp_origin: 'TRANSFERENCIAS_RECIBIDAS',
       };
       const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transactions`;
       const config: AxiosRequestConfig = {
@@ -290,7 +290,6 @@ export class ArventGroupService {
       };
 
       const response = await axios(config);
-      console.log('response', response);
       const data = response.data;
       console.log('data', data);
       return data
