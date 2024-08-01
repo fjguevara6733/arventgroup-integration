@@ -295,6 +295,7 @@ export class ArventGroupService {
     };
 
     const response = await axios(config);
+    console.log('response', response);
     const data = response.data;
     console.log('data', data);
 
