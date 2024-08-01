@@ -300,6 +300,7 @@ export class ArventGroupService {
     console.log('response', response);
     const accountCredits = [];
     const data = [];
+    let values = '';
     for (const transaction of response) {
       const { this_account } = transaction;
       const { account_routing } = this_account;
@@ -328,153 +329,21 @@ export class ArventGroupService {
           Number(accountCredits[index].amount) + Number(value.amount);
         accountCredits[index].count = Number(accountCredits[index].count) + 1;
       }
+      const searchCVU = this.datos.find(
+        (e) => e.cvu === account_routing.address,
+      );
+      if (searchCVU) {
+        const dataString = JSON.stringify(transaction);
+        values += `('${searchCVU.id}', '${dataString}', 'COMPLETED', '${searchCVU.email}', ${new Date()}, "credit")`;
+      }
     }
+    await this.arventGroupEntityManager
+      .query(
+        `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
+          VALUES ${values}`,
+      )
+      .then((response) => response)
+      .catch((error) => error);
     return accountCredits;
-    // const data = [
-    //   {
-    //     id: 'NSBT-1-58-685741-65-1-20240801-10-10-762-1',
-    //     counterparty: {
-    //       id: '27372520855',
-    //       name: 'SOSA CECILIA FERNANDA',
-    //       id_type: 'CUIT_CUIL',
-    //       bank_routing: {
-    //         scheme: 'UNAVAILABLE',
-    //         address: '',
-    //       },
-    //       account_routing: {
-    //         scheme: 'CVU',
-    //         address: '0000013000032212666895',
-    //       },
-    //     },
-    //     details: {
-    //       type: 'TRANSFERENCIAS_RECIBIDAS',
-    //       description: 'Transferencia Credito',
-    //       posted: '2024-08-01T00:00:00Z',
-    //       completed: '2024-08-01T14:20:51Z',
-    //       value: {
-    //         currency: 'ARS',
-    //         amount: 9786.8,
-    //       },
-    //       motive: 'VAR',
-    //       reference_number: 'LOEJWV9J05YP5OQM2QMD0G',
-    //       new_balance: {
-    //         currency: 'ARS',
-    //         amount: 77859937.88,
-    //       },
-    //     },
-    //     metadata: {
-    //       tags: [],
-    //     },
-    //     this_account: {
-    //       id: '20-1-685741-1-5',
-    //       kind: '20',
-    //       bank_routing: {
-    //         scheme: 'NAME',
-    //         address: 'BANCO INDUSTRIAL S.A.',
-    //         code: '322',
-    //       },
-    //       account_routing: {
-    //         scheme: 'CVU',
-    //         address: '0000058100000000034531',
-    //       },
-    //     },
-    //   },
-    //   {
-    //     id: 'NSBT-1-55-685741-65-1-20240801-10-10-8939-1',
-    //     counterparty: {
-    //       id: '27945021042',
-    //       name: 'HERRERA JORDAN MARCIA BRISSETT',
-    //       id_type: 'CUIT_CUIL',
-    //       bank_routing: {
-    //         scheme: 'UNAVAILABLE',
-    //         address: '',
-    //       },
-    //       account_routing: {
-    //         scheme: 'CVU',
-    //         address: '0000013000032159277185',
-    //       },
-    //     },
-    //     details: {
-    //       type: 'TRANSFERENCIAS_RECIBIDAS',
-    //       description: 'Transferencia Credito',
-    //       posted: '2024-08-01T00:00:00Z',
-    //       completed: '2024-08-01T13:52:55Z',
-    //       value: {
-    //         currency: 'ARS',
-    //         amount: 5936.27,
-    //       },
-    //       motive: 'VAR',
-    //       reference_number: 'LOEJWV9J05YQO0RR2QMD0G',
-    //       new_balance: {
-    //         currency: 'ARS',
-    //         amount: 79292878.85,
-    //       },
-    //     },
-    //     metadata: {
-    //       tags: [],
-    //     },
-    //     this_account: {
-    //       id: '20-1-685741-1-5',
-    //       kind: '20',
-    //       bank_routing: {
-    //         scheme: 'NAME',
-    //         address: 'BANCO INDUSTRIAL S.A.',
-    //         code: '322',
-    //       },
-    //       account_routing: {
-    //         scheme: 'CVU',
-    //         address: '0000058100000000034531',
-    //       },
-    //     },
-    //   },
-    //   {
-    //     id: 'NSBT-1-50-685741-65-1-20240801-10-10-7224-1',
-    //     counterparty: {
-    //       id: '27372520855',
-    //       name: 'SOSA CECILIA FERNANDA',
-    //       id_type: 'CUIT_CUIL',
-    //       bank_routing: {
-    //         scheme: 'UNAVAILABLE',
-    //         address: '',
-    //       },
-    //       account_routing: {
-    //         scheme: 'CVU',
-    //         address: '0000013000032212666895',
-    //       },
-    //     },
-    //     details: {
-    //       type: 'TRANSFERENCIAS_RECIBIDAS',
-    //       description: 'Transferencia Credito',
-    //       posted: '2024-08-01T00:00:00Z',
-    //       completed: '2024-08-01T12:51:14Z',
-    //       value: {
-    //         currency: 'ARS',
-    //         amount: 12703.27,
-    //       },
-    //       motive: 'VAR',
-    //       reference_number: 'LMORZP90K7J6YRJY9EGJ46',
-    //       new_balance: {
-    //         currency: 'ARS',
-    //         amount: 83025546.55,
-    //       },
-    //     },
-    //     metadata: {
-    //       tags: [],
-    //     },
-    //     this_account: {
-    //       id: '20-1-685741-1-5',
-    //       kind: '20',
-    //       bank_routing: {
-    //         scheme: 'NAME',
-    //         address: 'BANCO INDUSTRIAL S.A.',
-    //         code: '322',
-    //       },
-    //       account_routing: {
-    //         scheme: 'CVU',
-    //         address: '0000058100000000034531',
-    //       },
-    //     },
-    //   },
-    // ];
   }
 }
