@@ -12,6 +12,7 @@ import {
 import { ArventGroupService } from './arvent-group.service';
 import { ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
+  arventGetTransactions,
   arventGetTransactionsCredit,
   DoRequestDto,
   DoRequestDtoDebin,
@@ -82,11 +83,11 @@ export class ArventGroupController {
       });
   }
 
-  @Get('transactions-report')
+  @Post('transactions-report')
   @ApiHeader({ name: 'api-key', required: true })
-  async transactionReport(@Res() res: Response) {
+  async transactionReport(@Res() res: Response, @Body() body: arventGetTransactions) {
     await this.arventGroupService
-      .transactionReport()
+      .transactionReport(body)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
@@ -104,6 +105,7 @@ export class ArventGroupController {
         res.status(HttpStatus.BAD_REQUEST).send(response);
       });
   }
+
   @Cron(CronExpression.EVERY_5_MINUTES)
   @Get('transactions-update')
   async updateStatusTransactions() {
@@ -192,5 +194,28 @@ export class ArventGroupController {
     } catch (error) {
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @Post('transactions-report-debit')
+  @ApiHeader({ name: 'api-key', required: true })
+  async transactionReportDebit(@Res() res: Response, @Body() body: arventGetTransactions) {
+    await this.arventGroupService
+      .transactionReportDebit(body)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'transactions report',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error transactions report',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
   }
 }

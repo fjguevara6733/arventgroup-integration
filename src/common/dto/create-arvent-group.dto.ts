@@ -71,7 +71,7 @@ export class arventGetTransactionsCredit {
   @ApiProperty({ default: 'TRANSFERENCIAS_RECIBIDAS' })
   @IsString()
   @IsNotEmpty()
-  obp_origin: string;
+  obp_categories: string;
 }
 
 export class DoRequestDtoDebin {
@@ -89,4 +89,21 @@ export class DoRequestDtoDebin {
   @IsString()
   @IsNotEmpty()
   email: string;
+}
+
+export class arventGetTransactions {
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  limit: number;
+
+  @ApiProperty()
+  @IsNumber()
+  @IsNotEmpty()
+  offset: number;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  accountEmail: string;
 }

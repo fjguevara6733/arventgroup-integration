@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import {
+  arventGetTransactions,
   arventGetTransactionsCredit,
   DoRequestDto,
   DoRequestDtoDebin,
@@ -269,14 +270,21 @@ export class ArventGroupService {
    * Servicio para listar las transacciones
    * @returns
    */
-  async transactionReport() {
+  async transactionReport(body: arventGetTransactions) {
+    if (body.limit === 0) body.limit = 10;
+
     const data = await this.arventGroupEntityManager.query(
-      'SELECT * FROM transactions',
+      `SELECT * FROM transactions 
+      WHERE email = '${body.accountEmail}' 
+      LIMIT ${body.limit} OFFSET ${body.offset}; `,
     );
+
     const response = data.map((e) => {
       return {
         id: e.idTransaction,
         status: e.status,
+        dateTransaction: e.dateTransaction,
+        type: e.type,
         emailOriginDebit: e.email,
         responseBank: JSON.parse(e.response),
       };
@@ -291,7 +299,7 @@ export class ArventGroupService {
    */
   async updateStatusTransactions() {
     const data = await this.arventGroupEntityManager.query(
-      'SELECT * FROM transactions WHERE status = "IN_PROGRESS"',
+      'SELECT * FROM payments WHERE status = "IN_PROGRESS"',
     );
 
     for (const transaction of data) {
@@ -307,7 +315,14 @@ export class ArventGroupService {
       const dataResponse = data.data;
       await this.arventGroupEntityManager
         .query(
-          `UPDATE transactions SET status = '${dataResponse.status}', response = '${JSON.stringify(dataResponse)}' WHERE id = ${transaction.id}`,
+          `UPDATE payments SET status = '${dataResponse.status}', response = '${JSON.stringify(dataResponse)}' WHERE id = ${transaction.id}`,
+        )
+        .then((response) => response)
+        .catch((error) => error);
+      await this.arventGroupEntityManager
+        .query(
+          `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
+          VALUES ('${transaction.idTransaction}', '${JSON.stringify(response)}', '${response.status}', '${transaction.email}','${response.start_date.replace('T', ' ').replace('Z', '')}', "debit")`,
         )
         .then((response) => response)
         .catch((error) => error);
@@ -423,6 +438,12 @@ export class ArventGroupService {
     );
   }
 
+  /**
+   * @method createDeposit
+   * Servicio para crear peticion de DEBIN (credito)
+   * @param body 
+   * @returns 
+   */
   async createDeposit(body: DoRequestDtoDebin) {
     const { originCbu, amount, email } = body;
     const emails = this.datos.find(
@@ -536,5 +557,31 @@ export class ArventGroupService {
       console.log(queryUpdate);
     }
     return true;
+  }
+
+  /**
+   * @method transactionReportDebit
+   * Servicio para listar los retiros
+   * @returns
+   */
+  async transactionReportDebit(body: arventGetTransactions) {
+    if (body.limit === 0) body.limit = 10;
+
+    const data = await this.arventGroupEntityManager.query(
+      `SELECT * FROM payments 
+      WHERE email = '${body.accountEmail}' 
+      LIMIT ${body.limit} OFFSET ${body.offset}; `,
+    );
+
+    const response = data.map((e) => {
+      return {
+        id: e.idTransaction,
+        status: e.status,
+        dateTransaction: e.dateTransaction,
+        emailOriginDebit: e.email,
+        responseBank: JSON.parse(e.response),
+      };
+    });
+    return response;
   }
 }
