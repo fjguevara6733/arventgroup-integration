@@ -519,7 +519,7 @@ export class ArventGroupService {
       const query = await this.arventGroupEntityManager
         .query(
           `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ('${transaction.idTransaction}', '${transaction.response}', '${response.status}', '${transaction.email}','${response.start_date.replace('T', ' ').replace('Z', '')}', "credit")`,
+          VALUES ('${transaction.idTransaction}', '${JSON.stringify(response)}', '${response.status}', '${transaction.email}','${response.start_date.replace('T', ' ').replace('Z', '')}', "credit")`,
         )
         .then((response) => response)
         .catch((error) => error);
@@ -529,7 +529,7 @@ export class ArventGroupService {
         Number(balanceAccount.amount) + Number(charge.value.amount);
       const queryUpdate = await this.arventGroupEntityManager
         .query(
-          ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balances.id}`,
+          ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balanceAccount.id}`,
         )
         .then((response) => response)
         .catch((error) => error);
