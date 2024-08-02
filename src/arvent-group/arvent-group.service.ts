@@ -275,7 +275,7 @@ export class ArventGroupService {
 
     const data = await this.arventGroupEntityManager.query(
       `SELECT * FROM transactions 
-      WHERE email = '${body.accountEmail}' 
+      WHERE email = '${body.accountEmail}' AND type = ${body.type}
       LIMIT ${body.limit} OFFSET ${body.offset}; `,
     );
 
