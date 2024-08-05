@@ -625,6 +625,7 @@ export class ArventGroupService {
     };
     const data: Client = body;
     data.client_id = uuidv4();
+    data.currency = "ARS";
     console.log('data', data);
 
     const config: AxiosRequestConfig = {
@@ -634,6 +635,7 @@ export class ArventGroupService {
       headers,
       httpsAgent: this.httpsAgent,
     };
+    console.log('config', config);
     const response = await axios(config)
       .then((response) => response.data)
       .catch((error) => {
