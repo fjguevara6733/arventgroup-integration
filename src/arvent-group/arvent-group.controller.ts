@@ -14,6 +14,7 @@ import { ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   arventGetTransactions,
   arventGetTransactionsCredit,
+  createClientCvu,
   DoRequestDto,
   DoRequestDtoDebin,
 } from 'src/common/dto/create-arvent-group.dto';
@@ -260,8 +261,6 @@ export class ArventGroupController {
     await this.arventGroupService
       .createJuridicPerson(body)
       .then((result) => {
-        console.log('result', result);
-        
         const response = {
           statusCode: HttpStatus.ACCEPTED,
           message: 'create-juridic-person',
@@ -274,6 +273,33 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error create-juridic-person',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Post('create-cvu-client')
+  @ApiHeader({ name: 'api-key', required: true })
+  async createClientCvu(
+    @Res() res: Response,
+    @Body() body: createClientCvu,
+  ) {
+    await this.arventGroupService
+      .createClientCvu(body)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'create-cvu-client',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error create-cvu-client',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);
