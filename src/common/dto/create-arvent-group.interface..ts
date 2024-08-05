@@ -23,7 +23,7 @@ export interface BindRequestInterface {
 }
 
 export interface Client {
-  client_id?: string;
+  client_id?: number;
   cuit: string;
   name: string;
   currency: string;

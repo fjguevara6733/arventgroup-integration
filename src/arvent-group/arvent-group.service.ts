@@ -623,9 +623,11 @@ export class ArventGroupService {
     const headers = {
       Authorization: `JWT ${await this.getToken()}`,
     };
+    const uuid = uuidv4().replace(/-/g, ''); // Genera un UUID y elimina los guiones
+    const numericUUID = parseInt(uuid, 16);
     const data: Client = body;
-    data.client_id = uuidv4();
-    data.currency = "ARS";
+    data.client_id = numericUUID;
+    data.currency = 'ARS';
     console.log('data', data);
 
     const config: AxiosRequestConfig = {
@@ -644,6 +646,6 @@ export class ArventGroupService {
       });
 
     console.log(response);
-    return response
+    return response;
   }
 }
