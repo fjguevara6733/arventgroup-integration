@@ -644,8 +644,12 @@ export class ArventGroupService {
         console.log(error.response.data);
         throw error?.response?.data?.message;
       });
-
-    console.log(response);
+    await this.arventGroupEntityManager
+      .query(
+        `INSERT INTO clients (client_id, cuit) VALUES ('${data.client_id}', '${response.cvu}')`,
+      )
+      .then((response) => response)
+      .catch((error) => error);
     return response;
   }
 }
