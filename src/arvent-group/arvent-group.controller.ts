@@ -19,6 +19,7 @@ import {
 } from 'src/common/dto/create-arvent-group.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Response } from 'express';
+import { PersonDTO, UserCompanyDTO } from 'src/common/dto/user.dto';
 
 @Controller()
 @ApiTags('arvent-group')
@@ -85,7 +86,10 @@ export class ArventGroupController {
 
   @Post('transactions-report')
   @ApiHeader({ name: 'api-key', required: true })
-  async transactionReport(@Res() res: Response, @Body() body: arventGetTransactions) {
+  async transactionReport(
+    @Res() res: Response,
+    @Body() body: arventGetTransactions,
+  ) {
     await this.arventGroupService
       .transactionReport(body)
       .then((result) => {
@@ -182,7 +186,7 @@ export class ArventGroupController {
       });
   }
 
-  // @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   @Get('transactions-get-credits')
   async updateStatusTransactionsCredit() {
     try {
@@ -198,7 +202,10 @@ export class ArventGroupController {
 
   @Post('transactions-report-debit')
   @ApiHeader({ name: 'api-key', required: true })
-  async transactionReportDebit(@Res() res: Response, @Body() body: arventGetTransactions) {
+  async transactionReportDebit(
+    @Res() res: Response,
+    @Body() body: arventGetTransactions,
+  ) {
     await this.arventGroupService
       .transactionReportDebit(body)
       .then((result) => {
@@ -213,6 +220,60 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error transactions report',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Post('create-natural-person')
+  @ApiHeader({ name: 'api-key', required: true })
+  async createNaturalPerson(@Res() res: Response, @Body() body: PersonDTO) {
+    await this.arventGroupService
+      .createNaturalPerson(body)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'create-natural-person',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error create-natural-person',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Post('create-juridic-person')
+  @ApiHeader({ name: 'api-key', required: true })
+  async createJuridicPerson(
+    @Res() res: Response,
+    @Body() body: UserCompanyDTO,
+  ) {
+    await this.arventGroupService
+      .createJuridicPerson(body)
+      .then((result) => {
+        console.log('result', result);
+        
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'create-juridic-person',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error create-juridic-person',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);

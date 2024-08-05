@@ -3,16 +3,21 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import {
   arventGetTransactions,
   arventGetTransactionsCredit,
+  createClientCvu,
   DoRequestDto,
   DoRequestDtoDebin,
 } from 'src/common/dto/create-arvent-group.dto';
-import { BindRequestInterface } from 'src/common/dto/create-arvent-group.interface.';
+import {
+  BindRequestInterface,
+  Client,
+} from 'src/common/dto/create-arvent-group.interface.';
 import { CoinsFiat, ConceptBind } from 'src/common/enum';
 import { EntityManager } from 'typeorm';
 import * as https from 'https';
 import axios, { AxiosRequestConfig } from 'axios';
 import { readFileSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+import { PersonDTO, UserCompanyDTO } from 'src/common/dto/user.dto';
 
 @Injectable()
 export class ArventGroupService {
@@ -441,8 +446,8 @@ export class ArventGroupService {
   /**
    * @method createDeposit
    * Servicio para crear peticion de DEBIN (credito)
-   * @param body 
-   * @returns 
+   * @param body
+   * @returns
    */
   async createDeposit(body: DoRequestDtoDebin) {
     const { originCbu, amount, email } = body;
@@ -583,5 +588,59 @@ export class ArventGroupService {
       };
     });
     return response;
+  }
+
+  async createNaturalPerson(body: PersonDTO) {
+    return await this.arventGroupEntityManager
+      .query(
+        `INSERT INTO user (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, fileCuitFront, fileCuitBack, cuitCuil, cp, country, address)
+       VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.fileCuitFront}', '${body.fileCuitBack}', '${body.cuitCuil}', ${body.cp}, '${body.country}', '${body.address}')`,
+      )
+      .catch((error) => error.driverError)
+      .then((result) => result);
+  }
+
+  async createJuridicPerson(body: UserCompanyDTO) {
+    const data = await this.arventGroupEntityManager
+      .query(
+        ` INSERT INTO user_companies (business_name, cuit_cdi_cie, address, postal_code, city, country, 
+      registration_date, main_activity, headquarters_phone, email, contract_statute_attachment, 
+      last_balance_attachment, AFIP_registration_certificate_attachment, IBB_registration_certificate_attachment, notary_act_attachment, 
+      subject_to_article_20, politic_person, regulated_entity_20, participation_percentage, dni_front_file, dni_back_file, name, last_name)
+      VALUES ('${body.businessName}', '${body.cuitCDICIE}', '${body.address}', '${body.postalCode}', '${body.city}', 
+      '${body.country}', '${body.registrationDate}', '${body.mainActivity}', '${body.headquartersPhone}', '${body.email}', '${body.contractStatuteAttachment}', 
+      '${body.lastBalanceAttachment}', '${body.AFIPRegistrationCertificateAttachment}', '${body.IBBRegistrationCertificateAttachment}', '${body.notaryActAttachment}',
+       '${body.subjectToArticle20}', '${body.politicPerson}', '${body.regulatedEntity20}', '${body.participationPercentage}', '${body.dniFrontFile}', '${body.dniBackFile}', '${body.name}', '${body.lastName}')`,
+      )
+      .then((result) => result)
+      .catch((error) => error);
+    console.log(data);
+    return data;
+  }
+
+  async createClientCvu(body: createClientCvu) {
+    const url = `${this.urlBind}/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
+    const headers = {
+      Authorization: `JWT ${await this.getToken()}`,
+    };
+    const data: Client = body;
+    data.client_id = uuidv4();
+    console.log('data', data);
+
+    const config: AxiosRequestConfig = {
+      method: 'POST',
+      url,
+      data,
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
+    const response = await axios(config)
+      .then((response) => response.data)
+      .catch((error) => {
+        console.log(error.response.data);
+        throw error?.response?.data?.message;
+      });
+
+    console.log(response);
   }
 }

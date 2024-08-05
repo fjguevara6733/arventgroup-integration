@@ -113,3 +113,20 @@ export class arventGetTransactions {
   @IsNotEmpty()
   type?: string;
 }
+
+export class createClientCvu {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  cuit: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty({ default: 'ARS' })
+  @IsString()
+  @IsNotEmpty()
+  currency: string;
+}

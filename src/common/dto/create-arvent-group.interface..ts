@@ -21,3 +21,10 @@ export interface BindRequestInterface {
   };
   expiration?: number;
 }
+
+export interface Client {
+  client_id?: string;
+  cuit: string;
+  name: string;
+  currency: string;
+}
