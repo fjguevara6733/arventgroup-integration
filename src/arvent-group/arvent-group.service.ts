@@ -661,7 +661,6 @@ export class ArventGroupService {
     const response = await axios(config)
       .then((response) => response.data)
       .catch((error) => {
-        console.log(error.response.data);
         throw error?.response?.data?.message;
       });
     await this.arventGroupEntityManager
