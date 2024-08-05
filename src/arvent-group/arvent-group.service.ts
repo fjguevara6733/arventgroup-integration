@@ -628,7 +628,27 @@ export class ArventGroupService {
     const data: Client = body;
     data.client_id = numericUUID;
     data.currency = 'ARS';
-    console.log('data', data);
+    const existClient = await this.arventGroupEntityManager
+      .query(
+        `
+      SELECT * FROM user WHERE cuitCuil = ${body.cuit}`,
+      )
+      .then((response) => response)
+      .catch((error) => error);
+    const existClientJuridic = await this.arventGroupEntityManager
+      .query(
+        `
+      SELECT * FROM user_companies WHERE cuit_cdi_cie = ${body.cuit}`,
+      )
+      .then((response) => response)
+      .catch((error) => error);
+
+    if (
+      (!existClient || existClient.length === 0) &&
+      (!existClientJuridic || existClientJuridic.length === 0)
+    ) {
+      throw 'No existe un cliente con este CUIT/CUIL.';
+    }
 
     const config: AxiosRequestConfig = {
       method: 'POST',
