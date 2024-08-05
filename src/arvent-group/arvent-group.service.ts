@@ -619,7 +619,7 @@ export class ArventGroupService {
   }
 
   async createClientCvu(body: createClientCvu) {
-    const url = `${this.urlBind}/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
+    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
     const headers = {
       Authorization: `JWT ${await this.getToken()}`,
     };
