@@ -74,7 +74,7 @@ console.log(
       port: 3306,
       username: 'chronostest',
       password: 'jsDhfjylv0PPBb1wHiNr',
-      database: 'arvent_group-dev',
+      database: 'arvent_group_dev',
       autoLoadEntities: true,
       synchronize: true,
     }),
