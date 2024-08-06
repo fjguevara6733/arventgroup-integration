@@ -21,8 +21,8 @@ async function bootstrap() {
   app.setGlobalPrefix(globalPrefix);
   app.useGlobalGuards(new AuthGuard());
 
-  await app.listen(4000, () => {
-    Logger.log(' Listening at  http://localhost:' + 4000 + '/' + globalPrefix);
+  await app.listen(3000, () => {
+    Logger.log(' Listening at  http://localhost:' + 3000 + '/' + globalPrefix);
   });
 }
 bootstrap();
