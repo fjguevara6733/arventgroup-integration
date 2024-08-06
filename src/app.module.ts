@@ -74,7 +74,7 @@ console.log(
       port: 3306,
       username: 'ubackend',
       password: 'db6ifiLdXS_5VsC',
-      database: 'arvent_group',
+      database: 'arvent_group-dev',
       autoLoadEntities: true,
       synchronize: true,
     }),
