@@ -616,6 +616,9 @@ export class ArventGroupService {
     if (!this.validateEnum(normalResponse, body.politicPerson))
       throw 'El campo persona política solo permite los valores de Si o No';
 
+    if(this.validarNumeroArgentina(body.phone) === false)
+      throw 'El campo telefono solo admite telefonos de Argentina';
+
     const user = await this.arventGroupEntityManager.query(
       `SELECT * FROM user WHERE cuitCuil = ${body.cuitCuil} or email = '${body.email}'`,
     );
@@ -645,6 +648,9 @@ export class ArventGroupService {
 
     if (!this.validateEnum(normalResponse, body.politicPerson))
       throw 'El campo persona política solo permite los valores de Si o No';
+
+    if(this.validarNumeroArgentina(body.headquartersPhone) === false)
+      throw 'El campo telefono solo admite telefonos de Argentina';
 
     const user = await this.arventGroupEntityManager.query(
       `SELECT * FROM user_companies WHERE cuit_cdi_cie = ${body.cuitCDICIE} OR email = '${body.email}'`,
@@ -823,5 +829,13 @@ export class ArventGroupService {
         if (typeof e === 'string') return e;
       })
       .includes(data);
+  }
+
+  private validarNumeroArgentina(number) {
+    // Expresión regular para validar un número de teléfono argentino con solo números
+    const regexTelefonoArgentinoNumeros = /^(?:\+?54)?\d{10}$/;
+
+    // Verificar si el número coincide con la expresión regular
+    return regexTelefonoArgentinoNumeros.test(number);
   }
 }
