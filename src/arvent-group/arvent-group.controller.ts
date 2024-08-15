@@ -8,9 +8,18 @@ import {
   Body,
   Post,
   Res,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { ArventGroupService } from './arvent-group.service';
-import { ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiHeader,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   arventGetTransactions,
   arventGetTransactionsCredit,
@@ -21,6 +30,9 @@ import {
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Response } from 'express';
 import { PersonDTO, UserCompanyDTO } from 'src/common/dto/user.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadedDocDto } from 'src/common/dto/upload-file.dto';
+import { KycDocTypes } from 'src/common/enum';
 
 @Controller()
 @ApiTags('arvent-group')
@@ -281,10 +293,7 @@ export class ArventGroupController {
 
   @Post('create-cvu-client')
   @ApiHeader({ name: 'api-key', required: true })
-  async createClientCvu(
-    @Res() res: Response,
-    @Body() body: createClientCvu,
-  ) {
+  async createClientCvu(@Res() res: Response, @Body() body: createClientCvu) {
     await this.arventGroupService
       .createClientCvu(body)
       .then((result) => {
@@ -300,6 +309,84 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error create-cvu-client',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Post('upload-file')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload KYC Documents' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        archivo: {
+          type: 'string',
+          nullable: false,
+          format: 'binary',
+        },
+        customerId: {
+          type: 'string',
+          nullable: false,
+          format: 'string',
+        },
+        docType: {
+          type: 'string',
+          description: `ENUM: ${Object.values(KycDocTypes)}`,
+          enum: Object.values(KycDocTypes),
+        },
+      },
+      required: ['archivo', 'docType', 'customerId'],
+    },
+  })
+  @ApiHeader({ name: 'api-key', required: true })
+  @UseInterceptors(FileInterceptor('archivo'))
+  async uploadFile(
+    @Res() res: Response,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: UploadedDocDto,
+  ) {
+    await this.arventGroupService
+      .uploadFile(body, file)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'upload-file',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error upload-file',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Get('get-data-user/:customerId')
+  @ApiHeader({ name: 'api-key', required: true })
+  async getDataUser(@Res() res: Response, @Param('customerId') customerId) {
+    await this.arventGroupService
+      .getDataUser(customerId)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'upload-file',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error upload-file',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);

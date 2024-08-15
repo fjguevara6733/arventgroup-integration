@@ -9,6 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'arvent';
   dotenv.config()
+  app.enableCors();
 
   const config = new DocumentBuilder()
     .setTitle('Chronos Prestamos')
