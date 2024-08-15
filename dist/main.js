@@ -20,8 +20,8 @@ async function bootstrap() {
     swagger_1.SwaggerModule.setup(globalPrefix, app, document);
     app.setGlobalPrefix(globalPrefix);
     app.useGlobalGuards(new guard_1.AuthGuard());
-    await app.listen(4000, () => {
-        common_1.Logger.log(' Listening at  http://localhost:' + 4000 + '/' + globalPrefix);
+    await app.listen(3000, () => {
+        common_1.Logger.log(' Listening at  http://localhost:' + 3000 + '/' + globalPrefix);
     });
 }
 bootstrap();

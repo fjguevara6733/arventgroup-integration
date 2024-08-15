@@ -1,6 +1,13 @@
 // company.dto.ts
-import { IsString, IsEmail, IsEnum, IsNotEmpty, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { normalResponse } from '../enum';
 
 export class UserCompanyDTO {
   @ApiProperty()
@@ -51,44 +58,19 @@ export class UserCompanyDTO {
   @IsEmail()
   email: string;
 
-  @ApiProperty()
+  @ApiProperty({ enum: normalResponse, default: normalResponse[0] })
   @IsNotEmpty()
-  @IsString()
-  contractStatuteAttachment: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  lastBalanceAttachment: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  AFIPRegistrationCertificateAttachment: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  IBBRegistrationCertificateAttachment: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  notaryActAttachment: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsEnum(['Yes', 'No'])
+  @IsEnum(['Si', 'No'])
   subjectToArticle20: string;
 
-  @ApiProperty()
+  @ApiProperty({ enum: normalResponse, default: normalResponse[0] })
   @IsNotEmpty()
-  @IsEnum(['Yes', 'No'])
+  @IsEnum(['Si', 'No'])
   politicPerson: string;
 
-  @ApiProperty()
+  @ApiProperty({ enum: normalResponse, default: normalResponse[0] })
   @IsNotEmpty()
-  @IsEnum(['Yes', 'No'])
+  @IsEnum(['Si', 'No'])
   regulatedEntity20: string;
 
   @ApiProperty()
@@ -107,26 +89,16 @@ export class UserCompanyDTO {
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  dniFrontFile: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  dniBackFile: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
   cuitCDICIE: string;
 }
 
 export class PersonDTO {
-  @ApiProperty()
+  @ApiProperty({ enum: normalResponse, default: normalResponse[0] })
   @IsNotEmpty()
   @IsString()
   regulatedEntity20: string;
 
-  @ApiProperty()
+  @ApiProperty({ enum: normalResponse, default: normalResponse[0] })
   @IsNotEmpty()
   @IsString()
   politicPerson: string;
@@ -164,22 +136,12 @@ export class PersonDTO {
   @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  fileCuitFront: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  fileCuitBack: string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
   cuitCuil: string;
 
   @ApiProperty()
   @IsNotEmpty()
   @IsNumber()
-  cp: number;
+  postalCode: number;
 
   @ApiProperty()
   @IsNotEmpty()
@@ -190,4 +152,10 @@ export class PersonDTO {
   @IsNotEmpty()
   @IsString()
   address: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  @IsEmail()
+  email: string;
 }
