@@ -620,7 +620,7 @@ export class ArventGroupService {
       throw 'El campo telefono solo admite telefonos de Argentina';
 
     const user = await this.arventGroupEntityManager.query(
-      `SELECT * FROM user WHERE cuitCuil = ${body.cuitCuil} or email = '${body.email}'`,
+      `SELECT * FROM user WHERE cuitCuil = '${body.cuitCuil}' or email = '${body.email}'`,
     );
     if (user[0]) throw 'Ya existe un cliente con este CUIT/CUIL o email.';
 
@@ -759,7 +759,7 @@ export class ArventGroupService {
     const user = await this.validateUser(customerId);
     const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
     const files = await this.arventGroupEntityManager.query(
-      `SELECT * FROM files WHERE cuit =${cuit}`,
+      `SELECT * FROM files WHERE cuit ='${cuit}'`,
     );
     const dataClient = await this.validateClient(cuit, false);
 
@@ -797,8 +797,6 @@ export class ArventGroupService {
       )
       .then((response) => response[0])
       .catch((error) => error);
-    console.log(existClient);
-    console.log(existClientJuridic);
 
     if (!existClient && !existClientJuridic)
       throw 'No existe un cliente con este customerId';
