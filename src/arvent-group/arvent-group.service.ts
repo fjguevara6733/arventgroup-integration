@@ -627,8 +627,8 @@ export class ArventGroupService {
     const uuid = uuidv4();
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO user (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid)
-       VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.cuitCuil}', ${body.postalCode}, '${body.country}', '${body.address}', '${uuid}')`,
+        `INSERT INTO user (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email)
+       VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.cuitCuil}', ${body.postalCode}, '${body.country}', '${body.address}', '${uuid}', '${body.email}')`,
       )
       .catch((error) => error.driverError)
       .then((result) => result);
@@ -733,7 +733,7 @@ export class ArventGroupService {
     const user = await this.validateUser(body.customerId);
     if (
       user.isNatural &&
-      (body.docType !== KycDocTypes[0] || body.docType !== KycDocTypes[1])
+      (body.docType !== KycDocTypes.idCardBack && body.docType !== KycDocTypes.idCardFront)
     )
       throw 'El docType no es asignable para un usuario natural.';
 
