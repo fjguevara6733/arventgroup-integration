@@ -7,7 +7,7 @@ import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const globalPrefix = 'arvent';
+  const globalPrefix = 'api';
   dotenv.config()
   app.enableCors();
 
