@@ -369,6 +369,60 @@ export class ArventGroupController {
       });
   }
 
+  @Post('upload-file-juridic')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload KYC Documents' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        archivo: {
+          type: 'string',
+          nullable: false,
+          format: 'binary',
+        },
+        customerId: {
+          type: 'string',
+          nullable: false,
+          format: 'string',
+        },
+        docType: {
+          type: 'string',
+          description: `ENUM: ${Object.values(KycDocTypes)}`,
+          enum: Object.values(KycDocTypes),
+        },
+      },
+      required: ['archivo', 'docType', 'customerId'],
+    },
+  })
+  @ApiHeader({ name: 'api-key', required: true })
+  @UseInterceptors(FileInterceptor('archivo'))
+  async uploadFileJuridic(
+    @Res() res: Response,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: UploadedDocDto,
+  ) {
+    await this.arventGroupService
+      .uploadFile(body, file)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'upload-file-juridic',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error upload-file-juridic',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
   @Get('get-data-user/:customerId')
   @ApiHeader({ name: 'api-key', required: true })
   async getDataUser(@Res() res: Response, @Param('customerId') customerId) {
