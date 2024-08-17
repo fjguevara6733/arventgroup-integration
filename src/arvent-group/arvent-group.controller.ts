@@ -322,7 +322,7 @@ export class ArventGroupController {
     schema: {
       type: 'object',
       properties: {
-        archivo: {
+        docFile: {
           type: 'string',
           nullable: false,
           format: 'binary',
@@ -338,11 +338,11 @@ export class ArventGroupController {
           enum: Object.values(KycDocTypes),
         },
       },
-      required: ['archivo', 'docType', 'customerId'],
+      required: ['docFile', 'docType', 'customerId'],
     },
   })
   @ApiHeader({ name: 'api-key', required: true })
-  @UseInterceptors(FileInterceptor('archivo'))
+  @UseInterceptors(FileInterceptor('docFile'))
   async uploadFile(
     @Res() res: Response,
     @UploadedFile() file: Express.Multer.File,
@@ -376,7 +376,7 @@ export class ArventGroupController {
     schema: {
       type: 'object',
       properties: {
-        archivo: {
+        docFile: {
           type: 'string',
           nullable: false,
           format: 'binary',
@@ -392,11 +392,11 @@ export class ArventGroupController {
           enum: Object.values(KycDocTypes),
         },
       },
-      required: ['archivo', 'docType', 'customerId'],
+      required: ['docFile', 'docType', 'customerId'],
     },
   })
   @ApiHeader({ name: 'api-key', required: true })
-  @UseInterceptors(FileInterceptor('archivo'))
+  @UseInterceptors(FileInterceptor('docFile'))
   async uploadFileJuridic(
     @Res() res: Response,
     @UploadedFile() file: Express.Multer.File,
