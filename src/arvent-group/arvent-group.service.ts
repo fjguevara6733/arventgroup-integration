@@ -627,8 +627,8 @@ export class ArventGroupService {
     const uuid = uuidv4();
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO user (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid)
-       VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.cuitCuil}', ${body.postalCode}, '${body.country}', '${body.address}', '${uuid}')`,
+        `INSERT INTO user (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email)
+       VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.cuitCuil}', ${body.postalCode}, '${body.country}', '${body.address}', '${uuid}', '${body.email}')`,
       )
       .catch((error) => error.driverError)
       .then((result) => result);
@@ -681,6 +681,17 @@ export class ArventGroupService {
    */
   async createClientCvu(body: createClientCvu) {
     const user = await this.validateUser(body.customerId);
+    const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
+    const files = await this.arventGroupEntityManager
+      .query(`SELECT * FROM files WHERE cuit ='${cuit}' `)
+      .then((response) => response);
+
+    if (!files) throw 'El usuario no cuenta con todos los documentos cargados';
+    if (user.isNatural && files.length < 2)
+      throw 'El usuario no cuenta con todos los documentos cargados';
+    else if (!user.isNatural && files.length < 5)
+      throw 'El usuario no cuenta con todos los documentos cargados';
+
     const uuid = uuidv4().replace(/-/g, '').substring(0, 10); // Genera un UUID y elimina los guiones
     const numericUUID = parseInt(uuid, 16);
     const data: Client = {
@@ -733,11 +744,32 @@ export class ArventGroupService {
     const user = await this.validateUser(body.customerId);
     if (
       user.isNatural &&
-      (body.docType !== KycDocTypes[0] || body.docType !== KycDocTypes[1])
+      body.docType !== KycDocTypes.idCardBack &&
+      body.docType !== KycDocTypes.idCardFront
     )
       throw 'El docType no es asignable para un usuario natural.';
 
     const imageData = file.buffer;
+    const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
+    const files = await this.arventGroupEntityManager
+      .query(
+        `SELECT * FROM files WHERE cuit ='${cuit}' AND typefile = '${body.docType}'`,
+      )
+      .then((response) => response[0]);
+
+    if (files) {
+      const id = files.id;
+      const queryUpdate = `UPDATE files SET data=?, mimetype = ? WHERE id = ?`;
+
+      await this.arventGroupEntityManager.query(queryUpdate, [
+        imageData,
+        file.mimetype,
+        id,
+      ]);
+
+      return 'Imagen actualizada correctamente';
+    }
+
     const sql =
       'INSERT INTO files (typefile, filename, mimetype, cuit, data) VALUES (?, ?, ?, ?, ?)';
     await this.arventGroupEntityManager
@@ -755,6 +787,12 @@ export class ArventGroupService {
     return 'Imagen subida con éxito';
   }
 
+  /**
+   * @method getDataUser
+   * Servicio para obtener toda la informacion del cliente
+   * @param customerId
+   * @returns
+   */
   async getDataUser(customerId) {
     const user = await this.validateUser(customerId);
     const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
