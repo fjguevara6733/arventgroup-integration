@@ -28,7 +28,10 @@ import { UploadedDocDto } from 'src/common/dto/upload-file.dto';
 
 @Injectable()
 export class ArventGroupService {
-  private urlBind = 'https://sandbox.bind.com.ar/v1';
+  private urlBind =
+    process.env.environment === 'dev'
+      ? process.env.URL_BIND
+      : process.env.URL_BIND_PROD;
   private httpsAgent: https.Agent;
   private token: string;
   private timeTokenExpirate: Date;
@@ -151,7 +154,6 @@ export class ArventGroupService {
         url: this.urlBind + '/login/jwt',
         data,
       };
-      console.log('config login', config);
 
       if (this.clientCertificate && this.clientKey) {
         this.httpsAgent = new https.Agent({
@@ -251,35 +253,31 @@ export class ArventGroupService {
     const data = response.data;
 
     const dataString = JSON.stringify(data);
-    const responseQuery = await this.arventGroupEntityManager
+    await this.arventGroupEntityManager
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction)
-          VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', ${new Date()})`,
+          VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', '${this.convertDate()}')`,
       )
       .then((response) => response)
       .catch((error) => error);
-      console.log('responseQuery', responseQuery);
-      
-    const responseQuery2 = await this.arventGroupEntityManager
+
+    await this.arventGroupEntityManager
       .query(
         `INSERT INTO payments (idTransaction,response, status, email, dateTransaction)
-          VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', ${new Date()})`,
+          VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', '${this.convertDate()}')`,
       )
       .then((response) => response)
       .catch((error) => error);
-      console.log('responseQuery2', responseQuery2);
-      
-    const newBalance = Number(balances) - Number(body.amount);
-    const responseQuery3 = await this.arventGroupEntityManager
+
+    const newBalance = Number(balances.amount) - Number(body.amount);
+    await this.arventGroupEntityManager
       .query(
         ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balances.id}`,
       )
       .then((response) => response)
       .catch((error) => error);
-      console.log('responseQuery3', responseQuery3);
-      
 
-    return data;
+    return dataString;
   }
 
   /**
@@ -432,13 +430,12 @@ export class ArventGroupService {
       if (dataBalance) {
         const amountBD = Number(dataBalance.amount);
         const total = account.amount + amountBD;
-        const update = await this.arventGroupEntityManager
+        await this.arventGroupEntityManager
           .query(
             `UPDATE balance SET amount = '${total}' WHERE id = ${dataBalance.id}`,
           )
           .then((response) => response)
           .catch((error) => error);
-        console.log(update);
       }
     }
 
@@ -685,10 +682,7 @@ export class ArventGroupService {
    */
   async createClientCvu(body: createClientCvu) {
     const user = await this.validateUser(body.customerId);
-    console.log('user', user);
-
     const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
-    console.log('cuit', cuit);
     const files = await this.arventGroupEntityManager
       .query(`SELECT * FROM files WHERE cuit ='${cuit}' `)
       .then((response) => response);
@@ -709,12 +703,10 @@ export class ArventGroupService {
         : `${user.name} ${user.last_name}`,
       cuit: user.isNatural ? user.cuitCuil : user.cuit_cdi_cie,
     };
-    console.log('data', data);
     await this.validateClient(data.cuit);
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
-    console.log(url);
-    const tokenExist = this.token ? this.token : await this.getToken();
+    const tokenExist = await this.getToken();
     const headers = {
       Authorization: `JWT ${tokenExist}`,
     };
@@ -726,20 +718,18 @@ export class ArventGroupService {
       headers,
       httpsAgent: this.httpsAgent,
     };
-    console.log('config', config);
     const response = await axios(config)
       .then((response) => response.data)
       .catch((error) => {
         throw error?.response?.data?.message;
       });
-    console.log('response', response);
-    const createClient = await this.arventGroupEntityManager
+
+    await this.arventGroupEntityManager
       .query(
-        `INSERT INTO clients (client_id, cuit, cvu) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}')`,
+        `INSERT INTO clients (client_id, cuit, cvu, creation_date) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}')`,
       )
       .then((response) => response)
       .catch((error) => error);
-    console.log('createClient', createClient);
 
     return response;
   }
@@ -887,5 +877,24 @@ export class ArventGroupService {
 
     // Verificar si el número coincide con la expresión regular
     return regexTelefonoArgentinoNumeros.test(number);
+  }
+
+  private convertDate() {
+    const fecha = new Date();
+    const year = fecha.getFullYear();
+    const month = fecha.getMonth() + 1; // Sumamos 1 porque los meses empiezan en 0 (enero es 0)
+    const day = fecha.getDate();
+    const hours = fecha.getHours();
+    const minutes = fecha.getMinutes();
+    const seconds = fecha.getSeconds();
+
+    // Formatear los valores para asegurarse de que tengan dos dígitos
+    const formattedMonth = month < 10 ? '0' + month : month;
+    const formattedDay = day < 10 ? '0' + day : day;
+    const formattedHours = hours < 10 ? '0' + hours : hours;
+    const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+    const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
+
+    return `${year}-${formattedMonth}-${formattedDay} ${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
   }
 }
