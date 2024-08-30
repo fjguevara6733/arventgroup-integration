@@ -28,7 +28,7 @@ import { UploadedDocDto } from 'src/common/dto/upload-file.dto';
 
 @Injectable()
 export class ArventGroupService {
-  private urlBind = "https://sandbox.bind.com.ar/v1";
+  private urlBind = 'https://sandbox.bind.com.ar/v1';
   private httpsAgent: https.Agent;
   private token: string;
   private timeTokenExpirate: Date;
@@ -706,6 +706,8 @@ export class ArventGroupService {
     await this.validateClient(data.cuit);
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
+    console.log(url);
+
     const headers = {
       Authorization: `JWT ${await this.getToken()}`,
     };
@@ -717,11 +719,13 @@ export class ArventGroupService {
       headers,
       httpsAgent: this.httpsAgent,
     };
+    console.log('config', config);
     const response = await axios(config)
       .then((response) => response.data)
       .catch((error) => {
         throw error?.response?.data?.message;
       });
+    console.log('response', response);
     await this.arventGroupEntityManager
       .query(
         `INSERT INTO clients (client_id, cuit, cvu) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}')`,
@@ -853,8 +857,6 @@ export class ArventGroupService {
       )
       .then((response) => response[0])
       .catch((error) => error);
-      console.log('existCvu', existCvu);
-      
 
     if (existCvu && needError)
       throw 'Este cuit ya cuenta con una cvu creada, por favor verifique';
