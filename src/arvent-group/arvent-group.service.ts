@@ -28,10 +28,7 @@ import { UploadedDocDto } from 'src/common/dto/upload-file.dto';
 
 @Injectable()
 export class ArventGroupService {
-  private urlBind =
-    process.env.environment === 'dev'
-      ? process.env.URL_BIND
-      : process.env.URL_BIND_PROD;
+  private urlBind = "https://sandbox.bind.com.ar/v1";
   private httpsAgent: https.Agent;
   private token: string;
   private timeTokenExpirate: Date;

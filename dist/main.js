@@ -8,8 +8,9 @@ const dotenv = require("dotenv");
 const common_1 = require("@nestjs/common");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    const globalPrefix = 'arvent';
+    const globalPrefix = 'api';
     dotenv.config();
+    app.enableCors();
     const config = new swagger_1.DocumentBuilder()
         .setTitle('Chronos Prestamos')
         .setDescription('The chronos prestamos API description')
