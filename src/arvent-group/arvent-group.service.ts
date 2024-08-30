@@ -151,6 +151,7 @@ export class ArventGroupService {
         url: this.urlBind + '/login/jwt',
         data,
       };
+      console.log('config login', config);
 
       if (this.clientCertificate && this.clientKey) {
         this.httpsAgent = new https.Agent({
@@ -172,7 +173,7 @@ export class ArventGroupService {
 
       return response.data.token;
     } catch (error) {
-      console.log(error?.response);
+      console.log('error', error?.response);
       throw new Error(error?.response?.data?.message);
     }
   }
@@ -707,9 +708,9 @@ export class ArventGroupService {
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
     console.log(url);
-
+    const tokenExist = this.token ? this.token : await this.getToken();
     const headers = {
-      Authorization: `JWT ${await this.getToken()}`,
+      Authorization: `JWT ${tokenExist}`,
     };
 
     const config: AxiosRequestConfig = {
