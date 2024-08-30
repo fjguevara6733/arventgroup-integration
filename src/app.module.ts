@@ -10,12 +10,10 @@ import { ConfigModule } from '@nestjs/config';
 const environment = process.env.environment;
 const host = process.env.HOST;
 const port = Number(process.env.PORT);
-const username =
-  environment === 'dev' ? process.env.USER : process.env.USER_PROD;
+const username = environment === 'dev' ? process.env.USER : process.env.USER_PROD;
 const password =
-  environment === 'dev' ? process.env.PASSWORD : process.env.PASSWORD_PROD;
-const database =
-  environment === 'dev' ? process.env.DB_DEV : process.env.DB_PROD;
+environment === 'dev' ? process.env.PASSWORD : process.env.PASSWORD_PROD;
+const database = environment === 'dev' ? process.env.DB_DEV : process.env.DB_PROD;
 const databaseArvent = process.env.DB_ARVENT_GROUP;
 console.log(
   host,
@@ -36,7 +34,7 @@ console.log(
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
+      isGlobal: true
     }),
     // TypeOrmModule.forRoot({
     //   name: 'chronos',
@@ -63,8 +61,8 @@ console.log(
       type: 'mysql',
       host: '172.24.0.15',
       port: 3306,
-      username: 'ubackend',
-      password: 'db6ifiLdXS_5VsC',
+      username: 'chronostest',
+      password: 'jsDhfjylv0PPBb1wHiNr',
       database: 'chronos_dev_0.1.0',
       autoLoadEntities: true,
       synchronize: true,
@@ -74,8 +72,8 @@ console.log(
       type: 'mysql',
       host: '172.24.0.15',
       port: 3306,
-      username: 'ubackend',
-      password: 'db6ifiLdXS_5VsC',
+      username: 'chronostest',
+      password: 'jsDhfjylv0PPBb1wHiNr',
       database: 'arvent_group_dev',
       autoLoadEntities: true,
       synchronize: true,
