@@ -251,27 +251,33 @@ export class ArventGroupService {
     const data = response.data;
 
     const dataString = JSON.stringify(data);
-    await this.arventGroupEntityManager
+    const responseQuery = await this.arventGroupEntityManager
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction)
           VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', ${new Date()})`,
       )
       .then((response) => response)
       .catch((error) => error);
-    await this.arventGroupEntityManager
+      console.log('responseQuery', responseQuery);
+      
+    const responseQuery2 = await this.arventGroupEntityManager
       .query(
         `INSERT INTO payments (idTransaction,response, status, email, dateTransaction)
           VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', ${new Date()})`,
       )
       .then((response) => response)
       .catch((error) => error);
+      console.log('responseQuery2', responseQuery2);
+      
     const newBalance = Number(balances) - Number(body.amount);
-    await this.arventGroupEntityManager
+    const responseQuery3 = await this.arventGroupEntityManager
       .query(
         ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balances.id}`,
       )
       .then((response) => response)
       .catch((error) => error);
+      console.log('responseQuery3', responseQuery3);
+      
 
     return data;
   }
@@ -727,12 +733,14 @@ export class ArventGroupService {
         throw error?.response?.data?.message;
       });
     console.log('response', response);
-    await this.arventGroupEntityManager
+    const createClient = await this.arventGroupEntityManager
       .query(
         `INSERT INTO clients (client_id, cuit, cvu) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}')`,
       )
       .then((response) => response)
       .catch((error) => error);
+    console.log('createClient', createClient);
+
     return response;
   }
 
