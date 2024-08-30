@@ -214,7 +214,7 @@ export class ArventGroupService {
       (response) => response[0],
     );
 
-    if (balances.amount < amount) throw 'Fondos insuficientes';
+    if (Number(balances.amount) < Number(amount)) throw 'Fondos insuficientes';
 
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
@@ -616,7 +616,7 @@ export class ArventGroupService {
     if (!this.validateEnum(normalResponse, body.politicPerson))
       throw 'El campo persona política solo permite los valores de Si o No';
 
-    if(this.validarNumeroArgentina(body.phone) === false)
+    if (this.validarNumeroArgentina(body.phone) === false)
       throw 'El campo telefono solo admite telefonos de Argentina';
 
     const user = await this.arventGroupEntityManager.query(
@@ -649,7 +649,7 @@ export class ArventGroupService {
     if (!this.validateEnum(normalResponse, body.politicPerson))
       throw 'El campo persona política solo permite los valores de Si o No';
 
-    if(this.validarNumeroArgentina(body.headquartersPhone) === false)
+    if (this.validarNumeroArgentina(body.headquartersPhone) === false)
       throw 'El campo telefono solo admite telefonos de Argentina';
 
     const user = await this.arventGroupEntityManager.query(
@@ -681,7 +681,10 @@ export class ArventGroupService {
    */
   async createClientCvu(body: createClientCvu) {
     const user = await this.validateUser(body.customerId);
+    console.log('user', user);
+
     const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
+    console.log('cuit', cuit);
     const files = await this.arventGroupEntityManager
       .query(`SELECT * FROM files WHERE cuit ='${cuit}' `)
       .then((response) => response);
@@ -702,6 +705,7 @@ export class ArventGroupService {
         : `${user.name} ${user.last_name}`,
       cuit: user.isNatural ? user.cuitCuil : user.cuit_cdi_cie,
     };
+    console.log('data', data);
     await this.validateClient(data.cuit);
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
@@ -852,6 +856,8 @@ export class ArventGroupService {
       )
       .then((response) => response[0])
       .catch((error) => error);
+      console.log('existCvu', existCvu);
+      
 
     if (existCvu && needError)
       throw 'Este cuit ya cuenta con una cvu creada, por favor verifique';
