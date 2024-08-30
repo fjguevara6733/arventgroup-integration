@@ -175,7 +175,7 @@ export class ArventGroupService {
 
       return response.data.token;
     } catch (error) {
-      console.log(error?.response);
+      console.log('error', error?.response);
       throw new Error(error?.response?.data?.message);
     }
   }
@@ -214,7 +214,7 @@ export class ArventGroupService {
       (response) => response[0],
     );
 
-    if (balances.amount < amount) throw 'Fondos insuficientes';
+    if (Number(balances.amount) < Number(amount)) throw 'Fondos insuficientes';
 
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
@@ -256,18 +256,20 @@ export class ArventGroupService {
     await this.arventGroupEntityManager
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction)
-          VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', ${new Date()})`,
+          VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', '${this.convertDate()}')`,
       )
       .then((response) => response)
       .catch((error) => error);
+
     await this.arventGroupEntityManager
       .query(
         `INSERT INTO payments (idTransaction,response, status, email, dateTransaction)
-          VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', ${new Date()})`,
+          VALUES ('${params.origin_id}', '${dataString}', '${data.status}', '${body.email}', '${this.convertDate()}')`,
       )
       .then((response) => response)
       .catch((error) => error);
-    const newBalance = Number(balances) - Number(body.amount);
+
+    const newBalance = Number(balances.amount) - Number(body.amount);
     await this.arventGroupEntityManager
       .query(
         ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balances.id}`,
@@ -428,13 +430,12 @@ export class ArventGroupService {
       if (dataBalance) {
         const amountBD = Number(dataBalance.amount);
         const total = account.amount + amountBD;
-        const update = await this.arventGroupEntityManager
+        await this.arventGroupEntityManager
           .query(
             `UPDATE balance SET amount = '${total}' WHERE id = ${dataBalance.id}`,
           )
           .then((response) => response)
           .catch((error) => error);
-        console.log(update);
       }
     }
 
@@ -705,8 +706,9 @@ export class ArventGroupService {
     await this.validateClient(data.cuit);
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
+    const tokenExist = await this.getToken();
     const headers = {
-      Authorization: `JWT ${await this.getToken()}`,
+      Authorization: `JWT ${tokenExist}`,
     };
 
     const config: AxiosRequestConfig = {
@@ -721,12 +723,14 @@ export class ArventGroupService {
       .catch((error) => {
         throw error?.response?.data?.message;
       });
+
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO clients (client_id, cuit, cvu) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}')`,
+        `INSERT INTO clients (client_id, cuit, cvu, creation_date) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}')`,
       )
       .then((response) => response)
       .catch((error) => error);
+
     return response;
   }
 
@@ -873,5 +877,24 @@ export class ArventGroupService {
 
     // Verificar si el número coincide con la expresión regular
     return regexTelefonoArgentinoNumeros.test(number);
+  }
+
+  private convertDate() {
+    const fecha = new Date();
+    const year = fecha.getFullYear();
+    const month = fecha.getMonth() + 1; // Sumamos 1 porque los meses empiezan en 0 (enero es 0)
+    const day = fecha.getDate();
+    const hours = fecha.getHours();
+    const minutes = fecha.getMinutes();
+    const seconds = fecha.getSeconds();
+
+    // Formatear los valores para asegurarse de que tengan dos dígitos
+    const formattedMonth = month < 10 ? '0' + month : month;
+    const formattedDay = day < 10 ? '0' + day : day;
+    const formattedHours = hours < 10 ? '0' + hours : hours;
+    const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+    const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
+
+    return `${year}-${formattedMonth}-${formattedDay} ${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
   }
 }
