@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './common/guard/guard';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { ConfigModule } from '@nestjs/config';
       synchronize: true,
     }),
     ArventGroupModule,
+    ScheduleModule.forRoot()
   ],
   controllers: [AppController],
   providers: [

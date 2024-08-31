@@ -277,7 +277,7 @@ export class ArventGroupService {
       .then((response) => response)
       .catch((error) => error);
 
-    return data;
+    return dataString;
   }
 
   /**
@@ -506,13 +506,22 @@ export class ArventGroupService {
       });
 
     const { start_date } = response;
+    const dateClean = start_date
+      .replace('T', ' ')
+      .replace('Z', '')
+      .split('.')[0];
     await this.arventGroupEntityManager
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', '${response.status}', '${emails.email}','${start_date.replace('T', ' ').replace('Z', '')}', "credit")`,
+          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', '${response.status}', '${emails.email}','${dateClean}', "credit")`,
       )
       .then((response) => response)
-      .catch((error) => error);
+      .catch((error) => {
+        console.log(error);
+
+        return error;
+      });
+
     return response;
   }
 
