@@ -126,6 +126,7 @@ export class ArventGroupController {
   @Cron(CronExpression.EVERY_5_MINUTES)
   @Get('transactions-update')
   async updateStatusTransactions() {
+    console.log('buscando debitos...');
     try {
       return {
         statusCode: HttpStatus.ACCEPTED,
@@ -202,6 +203,8 @@ export class ArventGroupController {
   @Cron(CronExpression.EVERY_5_MINUTES)
   @Get('transactions-get-credits')
   async updateStatusTransactionsCredit() {
+    console.log('buscando creditos...');
+
     try {
       return {
         statusCode: HttpStatus.ACCEPTED,

@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './common/guard/guard';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 
 const environment = process.env.environment;
 const host = process.env.HOST;
@@ -61,8 +62,8 @@ console.log(
       type: 'mysql',
       host: '172.24.0.15',
       port: 3306,
-      username: 'chronostest',
-      password: ',h1e6#STJBqZ9sSj',
+      username: 'ubackend',
+      password: 'db6ifiLdXS_5VsC',
       database: 'chronos_dev_0.1.0',
       autoLoadEntities: true,
       synchronize: true,
@@ -79,6 +80,7 @@ console.log(
       synchronize: true,
     }),
     ArventGroupModule,
+    ScheduleModule.forRoot()
   ],
   controllers: [AppController],
   providers: [
