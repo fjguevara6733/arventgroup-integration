@@ -833,6 +833,26 @@ export class ArventGroupService {
     };
   }
 
+  async getAccount(cvu: string) {
+    try {
+      const headers = {
+        Authorization: `JWT ${await this.getToken()}`,
+      };
+      const response = await axios.get(`${this.urlBind}/accounts/cbu/${cvu}`, {
+        headers,
+        httpsAgent: this.httpsAgent,
+      });
+
+      if (response.data.owners.length === 0)
+        throw new Error('CVU invalida para operar.');
+
+      return response.data;
+    } catch (error) {
+      console.log(error?.response?.data);
+      throw new Error(error?.response?.data?.message);
+    }
+  }
+
   private async validateUser(customerId: string) {
     const existClient = await this.arventGroupEntityManager
       .query(

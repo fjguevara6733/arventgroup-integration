@@ -449,4 +449,28 @@ export class ArventGroupController {
         res.status(HttpStatus.BAD_REQUEST).send(response);
       });
   }
+
+  @Get('get-data-cvu/:cvu')
+  @ApiHeader({ name: 'api-key', required: true })
+  async getAccount(@Res() res: Response, @Param('cvu') cvu) {
+    await this.arventGroupService
+      .getAccount(cvu)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'upload-file',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error upload-file',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
 }
