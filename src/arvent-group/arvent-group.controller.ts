@@ -23,6 +23,7 @@ import {
 import {
   arventGetTransactions,
   arventGetTransactionsCredit,
+  changeAliasByCvu,
   createClientCvu,
   DoRequestDto,
   DoRequestDtoDebin,
@@ -434,7 +435,7 @@ export class ArventGroupController {
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
-          message: 'upload-file',
+          message: 'get-data-user',
           data: result,
         };
         res.status(HttpStatus.ACCEPTED).send(response);
@@ -443,7 +444,55 @@ export class ArventGroupController {
         console.log(error);
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
-          message: 'Error upload-file',
+          message: 'Error get-data-user',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Get('get-data-cvu/:cvu')
+  @ApiHeader({ name: 'api-key', required: true })
+  async getAccount(@Res() res: Response, @Param('cvu') cvu) {
+    await this.arventGroupService
+      .getAccount(cvu)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'get-data-cvu',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error get-data-cvu',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Post('change-cvu-alias')
+  @ApiHeader({ name: 'api-key', required: true })
+  async changeAlias(@Res() res: Response, @Body() body: changeAliasByCvu) {
+    await this.arventGroupService
+      .changeAlias(body)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'change-cvu-alias',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error change-cvu-alias',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);

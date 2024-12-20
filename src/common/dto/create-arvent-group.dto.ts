@@ -108,7 +108,7 @@ export class arventGetTransactions {
   @IsNotEmpty()
   accountEmail: string;
 
-  @ApiProperty({enum: TypeTransactions, default: TypeTransactions[0]})
+  @ApiProperty({ enum: TypeTransactions, default: TypeTransactions[0] })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
@@ -120,4 +120,21 @@ export class createClientCvu {
   @IsString()
   @IsNotEmpty()
   customerId: string;
+}
+
+export class changeAliasByCvu {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  cuit: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  cvu: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  label: string;
 }

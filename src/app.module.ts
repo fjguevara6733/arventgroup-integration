@@ -8,30 +8,6 @@ import { AuthGuard } from './common/guard/guard';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 
-const environment = process.env.environment;
-const host = process.env.HOST;
-const port = Number(process.env.PORT);
-const username = environment === 'dev' ? process.env.USER : process.env.USER_PROD;
-const password =
-environment === 'dev' ? process.env.PASSWORD : process.env.PASSWORD_PROD;
-const database = environment === 'dev' ? process.env.DB_DEV : process.env.DB_PROD;
-const databaseArvent = process.env.DB_ARVENT_GROUP;
-console.log(
-  host,
-  '- ',
-  username,
-  '- ',
-  port,
-  '- ',
-  password,
-  '- ',
-  database,
-  '- ',
-  databaseArvent,
-  '- ',
-  environment,
-);
-
 @Module({
   imports: [
     ConfigModule.forRoot({

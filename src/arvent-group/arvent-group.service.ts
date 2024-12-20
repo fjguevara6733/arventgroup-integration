@@ -3,6 +3,7 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import {
   arventGetTransactions,
   arventGetTransactionsCredit,
+  changeAliasByCvu,
   createClientCvu,
   DoRequestDto,
   DoRequestDtoDebin,
@@ -851,6 +852,31 @@ export class ArventGroupService {
       console.log(error?.response?.data);
       throw new Error(error?.response?.data?.message);
     }
+  }
+
+  async changeAlias(body: changeAliasByCvu) {
+    await this.validateClient(body.cuit);
+
+    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/alias`;
+    const tokenExist = await this.getToken();
+    const headers = {
+      Authorization: `JWT ${tokenExist}`,
+    };
+
+    const config: AxiosRequestConfig = {
+      method: 'POST',
+      url,
+      data: body,
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
+    const response = await axios(config)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data?.message;
+      });
+
+    return response;
   }
 
   private async validateUser(customerId: string) {
