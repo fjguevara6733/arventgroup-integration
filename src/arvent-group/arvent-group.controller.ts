@@ -451,29 +451,6 @@ export class ArventGroupController {
       });
   }
 
-  @Get('get-data-cvu/:cvu')
-  @ApiHeader({ name: 'api-key', required: true })
-  async getAccount(@Res() res: Response, @Param('cvu') cvu) {
-    await this.arventGroupService
-      .getAccount(cvu)
-      .then((result) => {
-        const response = {
-          statusCode: HttpStatus.ACCEPTED,
-          message: 'get-data-cvu',
-          data: result,
-        };
-        res.status(HttpStatus.ACCEPTED).send(response);
-      })
-      .catch((error) => {
-        console.log(error);
-        const response = {
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: 'Error get-data-cvu',
-          data: error,
-        };
-        res.status(HttpStatus.BAD_REQUEST).send(response);
-      });
-  }
 
   @Post('change-cvu-alias')
   @ApiHeader({ name: 'api-key', required: true })
