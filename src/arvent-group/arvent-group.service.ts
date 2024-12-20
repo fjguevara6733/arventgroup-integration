@@ -855,8 +855,6 @@ export class ArventGroupService {
   }
 
   async changeAlias(body: changeAliasByCvu) {
-    await this.validateClient(body.cuit);
-
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/alias`;
     const tokenExist = await this.getToken();
     const headers = {
