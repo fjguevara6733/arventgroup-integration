@@ -73,6 +73,11 @@ export class ArventGroupService {
       id: 1,
       cvu: '0000058100000000034531',
     },
+    {
+      email: 'chronospay@integraciones.com',
+      id: 1,
+      cvu: '0000058105193400884642',
+    },
   ];
 
   constructor(
