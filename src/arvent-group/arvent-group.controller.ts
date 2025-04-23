@@ -138,7 +138,7 @@ export class ArventGroupController {
     }
   }
 
-  // @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_5_MINUTES)
   @Post('transactions-credit')
   async creditTransactions(@Body() payload: arventGetTransactionsCredit) {
     try {

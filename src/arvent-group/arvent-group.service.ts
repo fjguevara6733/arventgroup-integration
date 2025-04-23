@@ -398,6 +398,17 @@ export class ArventGroupService {
       const { details, this_account } = transaction;
       const { value } = details;
       const { account_routing } = this_account;
+
+      // Check if the transaction already exists in the database
+      const existingTransaction = await this.arventGroupEntityManager.query(
+        `SELECT idTransaction FROM transactions WHERE idTransaction = '${transaction.id}'`,
+      );
+
+      if (existingTransaction.length > 0) {
+        // Skip processing if the transaction already exists
+        continue;
+      }
+
       const index = accountCredits.findIndex(
         (e) => e.cvu === account_routing.address,
       );
@@ -422,13 +433,16 @@ export class ArventGroupService {
         );
       }
     }
-    await this.arventGroupEntityManager
-      .query(
-        `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ${values.join(',')}`,
-      )
-      .then((response) => response)
-      .catch((error) => error);
+
+    if (values.length > 0) {
+      await this.arventGroupEntityManager
+        .query(
+          `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
+            VALUES ${values.join(',')}`,
+        )
+        .then((response) => response)
+        .catch((error) => error);
+    }
 
     const balances = await this.stateBalance('');
     for (const account of accountCredits) {
