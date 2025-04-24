@@ -1013,7 +1013,7 @@ export class ArventGroupService {
         .insert()
         .into('webhook')
         .values({
-          data: JSON.stringify(body),
+          response: JSON.stringify(body),
           date: this.convertDate(),
           status: 'active',
         })
