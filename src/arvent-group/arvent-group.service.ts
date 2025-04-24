@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import {
   arventGetTransactions,
-  arventGetTransactionsCredit,
   changeAliasByCvu,
   createClientCvu,
   DoRequestDto,
@@ -72,6 +71,11 @@ export class ArventGroupService {
       email: 'marint',
       id: 1,
       cvu: '0000058100000000034531',
+    },
+    {
+      email: 'chronospay@integraciones.com',
+      id: 1,
+      cvu: '0000058105193400884642',
     },
   ];
 
@@ -356,91 +360,142 @@ export class ArventGroupService {
   }
 
   //tentiva de su uso completo
-  async creditTransactions(payload: arventGetTransactionsCredit) {
+  async creditTransactions() {
     const accountCredits = [];
-    const data = [];
     const values = [];
-    const headers = {
-      Authorization: `JWT ${await this.getToken()}`,
-      ...payload,
-    };
-    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transactions`;
-    const config: AxiosRequestConfig = {
-      method: 'GET',
-      url,
-      headers,
-      httpsAgent: this.httpsAgent,
-    };
+    const webhooks = await this.arventGroupEntityManager
+      .createQueryBuilder()
+      .select('*')
+      .from('webhook', 'w')
+      .where('w.status = :status', { status: 'active' })
+      .execute();
 
-    const response = await axios(config)
-      .then((response) => response.data)
-      .catch((error) => {
-        console.log(error.response.data);
-        throw new Error(error?.response?.data?.message);
-      });
+    const transactions = webhooks.map((webhook) => {
+      const dataJson = JSON.parse(webhook.response);
+      return {
+        id: webhook.id,
+        data: dataJson,
+        type: dataJson.type?.toLowerCase() || 'credit',
+        date: webhook.date,
+      };
+    });
 
-    for (const transaction of response) {
-      const { this_account } = transaction;
-      const { account_routing } = this_account;
-      const searchCVU = this.datos.find(
-        (e) => e.cvu === account_routing.address,
-      );
-      if (searchCVU) {
-        data.push(transaction);
-      }
-    }
-    for (const transaction of data) {
-      const { details, this_account } = transaction;
-      const { value } = details;
-      const { account_routing } = this_account;
-      const index = accountCredits.findIndex(
-        (e) => e.cvu === account_routing.address,
-      );
-      if (index === -1) {
-        accountCredits.push({
-          cvu: account_routing.address,
-          amount: value.amount,
-          count: 1,
-        });
-      } else {
-        accountCredits[index].amount =
-          Number(accountCredits[index].amount) + Number(value.amount);
-        accountCredits[index].count = Number(accountCredits[index].count) + 1;
-      }
-      const searchCVU = this.datos.find(
-        (e) => e.cvu === account_routing.address,
-      );
-      if (searchCVU) {
-        const dataString = JSON.stringify(transaction);
-        values.push(
-          `('${transaction.id}', '${dataString}', 'COMPLETED', '${searchCVU.email}','${details.completed.replace('T', ' ').replace('Z', '')}', "credit")`,
+    for (const transaction of transactions) {
+      const { type } = transaction;
+
+      if (type === 'credit') {
+        await this.processCreditTransaction(
+          transaction,
+          accountCredits,
+          values,
         );
+      } else if (type === 'debin') {
+        await this.processDebinTransaction(transaction, accountCredits, values);
       }
     }
+
+    if (values.length > 0) {
+      await this.insertTransactions(values);
+    }
+
+    await this.updateBalances(accountCredits);
+
+    return accountCredits;
+  }
+
+  private async processCreditTransaction(transaction, accountCredits, values) {
+    const { details, this_account } = transaction.data;
+    const { value } = details;
+    const { account_routing } = this_account;
+
+    this.updateAccountCredits(
+      accountCredits,
+      account_routing.address,
+      value.amount,
+    );
+
+    const searchCVU = this.datos.find((e) => e.cvu === account_routing.address);
+    if (searchCVU) {
+      const dataString = JSON.stringify(transaction.data);
+      values.push(
+        `('${transaction.data.id}', '${dataString}', 'COMPLETED', '${searchCVU.email}', '${details.completed.replace('T', ' ').replace('Z', '')}', 'credit')`,
+      );
+      await this.markWebhookAsInactive(transaction.id);
+    }
+  }
+
+  private async processDebinTransaction(transaction, accountCredits, values) {
+    const { details, charge, end_date } = transaction.data;
+    const { buyerAccountCBU, origin_id } = details;
+
+    const transactionData = await this.arventGroupEntityManager.query(
+      `SELECT * FROM transactions WHERE idTransaction = '${origin_id}' AND type = 'debit' AND status = 'PENDING'`,
+    );
+
+    this.updateAccountCredits(
+      accountCredits,
+      buyerAccountCBU,
+      -charge.value.amount,
+    );
+
+    if (transactionData.length > 0) {
+      const searchCVU = this.datos.find(
+        (e) => e.email === transactionData[0].email,
+      );
+      if (searchCVU) {
+        const dataString = JSON.stringify(transaction.data);
+        values.push(
+          `('${details.origin_id}', '${dataString}', 'COMPLETED', '${searchCVU.email}', '${end_date.replace('T', ' ').replace('Z', '')}', 'debit')`,
+        );
+        await this.markWebhookAsInactive(transaction.id);
+      }
+    }
+  }
+
+  private updateAccountCredits(accountCredits, cvu, amount) {
+    const index = accountCredits.findIndex((e) => e.cvu === cvu);
+    if (index === -1) {
+      accountCredits.push({ cvu, amount, count: 1 });
+    } else {
+      accountCredits[index].amount += Number(amount);
+      accountCredits[index].count += 1;
+    }
+  }
+
+  private async markWebhookAsInactive(id) {
+    await this.arventGroupEntityManager
+      .createQueryBuilder()
+      .update('webhook')
+      .set({ status: 'inactive' })
+      .where('id = :id', { id })
+      .execute();
+  }
+
+  private async insertTransactions(values) {
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ${values.join(',')}`,
+        `INSERT INTO transactions (idTransaction, response, status, email, dateTransaction, type) VALUES ${values.join(',')}`,
       )
-      .then((response) => response)
-      .catch((error) => error);
+      .catch((error) => {
+        console.error('Error inserting transactions:', error);
+      });
+  }
 
+  private async updateBalances(accountCredits) {
     const balances = await this.stateBalance('');
     for (const account of accountCredits) {
       const dataBalance = balances.find((e) => e.cvu === account.cvu);
       if (dataBalance) {
-        const amountBD = Number(dataBalance.amount);
-        const total = account.amount + amountBD;
+        const total = Number(dataBalance.amount) + account.amount;
         await this.arventGroupEntityManager
           .query(
             `UPDATE balance SET amount = '${total}' WHERE id = ${dataBalance.id}`,
           )
-          .then((response) => response)
-          .catch((error) => error);
+          .catch((error) => {
+            console.error('Error updating balance:', error);
+          });
       }
     }
-
-    return accountCredits;
   }
 
   /**
@@ -514,7 +569,7 @@ export class ArventGroupService {
     await this.arventGroupEntityManager
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', '${response.status}', '${emails.email}','${dateClean}', "credit")`,
+          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', '${response.status}', '${emails.email}','${dateClean}', "debit")`,
       )
       .then((response) => response)
       .catch((error) => {
@@ -949,5 +1004,18 @@ export class ArventGroupService {
     const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
 
     return `${year}-${formattedMonth}-${formattedDay} ${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+  }
+
+  async webhook(body) {
+    await this.arventGroupEntityManager
+      .createQueryBuilder()
+      .insert()
+      .into('webhook')
+      .values({
+        data: JSON.stringify(body),
+        date: this.convertDate(),
+        status: 'active',
+      })
+      .execute();
   }
 }
