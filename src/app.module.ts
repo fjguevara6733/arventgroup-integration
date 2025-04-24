@@ -34,7 +34,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     TypeOrmModule.forRoot({
       name: 'arventGroup',
       type: 'mysql',
-      host: 'http://database-chronospay-prod.cz6kkw664bxb.us-east-1.rds.amazonaws.com',
+      host: 'database-chronospay-prod.cz6kkw664bxb.us-east-1.rds.amazonaws.com',
       port: 3306,
       username: 'chronoslive',
       password: 'h}z4fh92VBKu*xV<',
@@ -45,7 +45,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     TypeOrmModule.forRoot({
       name: 'chronos',
       type: 'mysql',
-      host: 'http://database-chronospay-prod.cz6kkw664bxb.us-east-1.rds.amazonaws.com',
+      host: 'database-chronospay-prod.cz6kkw664bxb.us-east-1.rds.amazonaws.com',
       port: 3306,
       username: 'chronoslive',
       password: 'h}z4fh92VBKu*xV<',
