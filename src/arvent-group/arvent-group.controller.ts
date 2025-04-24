@@ -22,7 +22,6 @@ import {
 } from '@nestjs/swagger';
 import {
   arventGetTransactions,
-  arventGetTransactionsCredit,
   changeAliasByCvu,
   createClientCvu,
   DoRequestDto,
@@ -140,14 +139,16 @@ export class ArventGroupController {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   @Post('transactions-credit')
-  async creditTransactions(@Body() payload: arventGetTransactionsCredit) {
+  async creditTransactions() {
     try {
       return {
         statusCode: HttpStatus.ACCEPTED,
         message: 'send Transaction',
-        data: await this.arventGroupService.creditTransactions(payload),
+        data: await this.arventGroupService.creditTransactions(),
       };
     } catch (error) {
+      console.log('error transactions-credit', error);
+
       throw new HttpException(error?.message, HttpStatus.BAD_REQUEST);
     }
   }
@@ -491,6 +492,30 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error change-cvu-alias',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Post('webhook')
+  @ApiHeader({ name: 'api-key', required: true })
+  async webhook(@Res() res: Response, @Body() body: any) {
+    await this.arventGroupService
+      .webhook(body)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'webhook',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error webhook',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);
