@@ -1007,15 +1007,19 @@ export class ArventGroupService {
   }
 
   async webhook(body) {
-    await this.arventGroupEntityManager
-      .createQueryBuilder()
-      .insert()
-      .into('webhook')
-      .values({
-        data: JSON.stringify(body),
-        date: this.convertDate(),
-        status: 'active',
-      })
-      .execute();
+    if (body) {
+      await this.arventGroupEntityManager
+        .createQueryBuilder()
+        .insert()
+        .into('webhook')
+        .values({
+          data: JSON.stringify(body),
+          date: this.convertDate(),
+          status: 'active',
+        })
+        .execute();
+      return 'Webhook creado correctamente';
+    }
+    return 'Webhook vacio';
   }
 }
