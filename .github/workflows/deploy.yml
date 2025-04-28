@@ -26,6 +26,8 @@ jobs:
       run: |
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no chronos@13.59.50.173 << 'EOF'
           cd /usr/local/src/Arvent-Dev/arventgroup-integration
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # Cargar NVM
           nvm use default
           git checkout .
           git pull origin main-dev
