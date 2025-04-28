@@ -150,3 +150,15 @@ export class createClientCvuBind {
   @IsNotEmpty()
   name: string;
 }
+
+export class updateNameBind{
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  cvu: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+}

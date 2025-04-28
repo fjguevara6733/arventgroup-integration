@@ -7,6 +7,7 @@ import {
   createClientCvuBind,
   DoRequestDto,
   DoRequestDtoDebin,
+  updateNameBind,
 } from 'src/common/dto/create-arvent-group.dto';
 import {
   BindRequestInterface,
@@ -807,7 +808,7 @@ export class ArventGroupService {
       client_id: numericUUID,
       currency: 'ARS',
       name: body.name,
-      cuit: body.cuit
+      cuit: body.cuit,
     };
     await this.validateClient(data.cuit);
 
@@ -836,6 +837,8 @@ export class ArventGroupService {
       )
       .then((response) => response)
       .catch((error) => error);
+
+    return response;
   }
 
   /**
@@ -1060,5 +1063,28 @@ export class ArventGroupService {
       return 'Webhook creado correctamente';
     }
     return 'Webhook vacio';
+  }
+
+  async updateNameBind(body: updateNameBind) {
+    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu/${body.cvu}`;
+    const tokenExist = await this.getToken();
+    const headers = {
+      Authorization: `JWT ${tokenExist}`,
+    };
+
+    const config: AxiosRequestConfig = {
+      method: 'PUT',
+      url,
+      data:{
+        name: body.name,
+      },
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
+    return await axios(config)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data?.message;
+      });
   }
 }

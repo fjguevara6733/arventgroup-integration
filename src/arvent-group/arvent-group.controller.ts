@@ -10,6 +10,7 @@ import {
   Res,
   UseInterceptors,
   UploadedFile,
+  Put,
 } from '@nestjs/common';
 import { ArventGroupService } from './arvent-group.service';
 import {
@@ -27,6 +28,7 @@ import {
   createClientCvuBind,
   DoRequestDto,
   DoRequestDtoDebin,
+  updateNameBind,
 } from 'src/common/dto/create-arvent-group.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Response } from 'express';
@@ -544,6 +546,33 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error create-cvu-client-bind',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Put('change-name-bind')
+  @ApiHeader({ name: 'api-key', required: true })
+  async updateNameBind(
+    @Res() res: Response,
+    @Body() body: updateNameBind,
+  ) {
+    await this.arventGroupService
+      .updateNameBind(body)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'change-name-bind',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error change-name-bind',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);
