@@ -1,0 +1,34 @@
+name: Pipeline
+
+on:
+  push:
+    branches:
+      - main-dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
+    - name: Install SSH Client
+      run: sudo apt-get install openssh-client -y
+
+    - name: Add SSH Key
+      run: |
+       mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY_QA }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+    - name: Deploy to EC2
+      run: |
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no chronos@13.59.50.173 << 'EOF'
+          cd /usr/local/src/Arvent-Dev/arventgroup-integration
+          git checkout .
+          git pull origin main-dev
+          npm i
+          pm2 restart Arvent-Dev
+        EOF
+      shell: bash
