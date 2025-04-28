@@ -26,6 +26,7 @@ jobs:
       run: |
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no chronos@13.59.50.173 << 'EOF'
           cd /usr/local/src/Arvent-Dev/arventgroup-integration
+          nvm use default
           git checkout .
           git pull origin main-dev
           npm i
