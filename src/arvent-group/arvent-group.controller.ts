@@ -24,6 +24,7 @@ import {
   arventGetTransactions,
   changeAliasByCvu,
   createClientCvu,
+  createClientCvuBind,
   DoRequestDto,
   DoRequestDtoDebin,
 } from 'src/common/dto/create-arvent-group.dto';
@@ -516,6 +517,33 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error webhook',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Post('create-cvu-client-bind')
+  @ApiHeader({ name: 'api-key', required: true })
+  async createClientCvuBind(
+    @Res() res: Response,
+    @Body() body: createClientCvuBind,
+  ) {
+    await this.arventGroupService
+      .createCvuBind(body)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'create-cvu-client-bind',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error create-cvu-client-bind',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);

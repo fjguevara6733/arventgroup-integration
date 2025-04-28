@@ -4,6 +4,7 @@ import {
   arventGetTransactions,
   changeAliasByCvu,
   createClientCvu,
+  createClientCvuBind,
   DoRequestDto,
   DoRequestDtoDebin,
 } from 'src/common/dto/create-arvent-group.dto';
@@ -797,6 +798,44 @@ export class ArventGroupService {
       .catch((error) => error);
 
     return response;
+  }
+
+  async createCvuBind(body: createClientCvuBind) {
+    const uuid = uuidv4().replace(/-/g, '').substring(0, 10); // Genera un UUID y elimina los guiones
+    const numericUUID = parseInt(uuid, 16);
+    const data: Client = {
+      client_id: numericUUID,
+      currency: 'ARS',
+      name: body.name,
+      cuit: body.cuit
+    };
+    await this.validateClient(data.cuit);
+
+    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
+    const tokenExist = await this.getToken();
+    const headers = {
+      Authorization: `JWT ${tokenExist}`,
+    };
+
+    const config: AxiosRequestConfig = {
+      method: 'POST',
+      url,
+      data,
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
+    const response = await axios(config)
+      .then((response) => response.data)
+      .catch((error) => {
+        throw error?.response?.data?.message;
+      });
+
+    await this.arventGroupEntityManager
+      .query(
+        `INSERT INTO clients (client_id, cuit, cvu, creation_date) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}')`,
+      )
+      .then((response) => response)
+      .catch((error) => error);
   }
 
   /**
