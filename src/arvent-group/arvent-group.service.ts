@@ -377,7 +377,11 @@ export class ArventGroupService {
       return {
         id: webhook.id,
         data: dataJson,
-        type: dataJson.type?.toLowerCase() || 'credit',
+        type:
+          dataJson.type === 'transfer.cvu.received' ||
+          dataJson.type === undefined
+            ? 'credit'
+            : 'debin',
         date: webhook.date,
       };
     });
@@ -406,21 +410,21 @@ export class ArventGroupService {
   }
 
   private async processCreditTransaction(transaction, accountCredits, values) {
-    const { details, this_account } = transaction.data;
-    const { value } = details;
-    const { account_routing } = this_account;
+    const cleanData = transaction.data?.data || transaction.data;
+    const { details, this_account } = cleanData;
+    const value = details.value || cleanData.charge.value;
+    const accountrouting = this_account
+      ? this_account.account_routing.address
+      : details.origin_credit.cvu;
 
-    this.updateAccountCredits(
-      accountCredits,
-      account_routing.address,
-      value.amount,
-    );
+    this.updateAccountCredits(accountCredits, accountrouting, value.amount);
 
-    const searchCVU = this.datos.find((e) => e.cvu === account_routing.address);
+    const searchCVU = this.datos.find((e) => e.cvu === accountrouting);
+
     if (searchCVU) {
       const dataString = JSON.stringify(transaction.data);
       values.push(
-        `('${transaction.data.id}', '${dataString}', 'COMPLETED', '${searchCVU.email}', '${details.completed.replace('T', ' ').replace('Z', '')}', 'credit')`,
+        `('${transaction.data.id}', '${dataString}', 'COMPLETED', '${searchCVU.email}', '${details.completed ? details.completed.replace('T', ' ').replace('Z', '') : cleanData.business_date}', 'credit')`,
       );
       await this.markWebhookAsInactive(transaction.id);
     }
@@ -1075,7 +1079,7 @@ export class ArventGroupService {
     const config: AxiosRequestConfig = {
       method: 'PUT',
       url,
-      data:{
+      data: {
         name: body.name,
       },
       headers,
