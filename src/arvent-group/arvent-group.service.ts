@@ -424,7 +424,7 @@ export class ArventGroupService {
     if (searchCVU) {
       const dataString = JSON.stringify(transaction.data);
       values.push(
-        `('${transaction.data.id}', '${dataString}', 'COMPLETED', '${searchCVU.email}', '${details.completed ? details.completed.replace('T', ' ').replace('Z', '') : cleanData.business_date}', 'credit')`,
+        `('${transaction.data.id}', '${dataString}', 'COMPLETED', '${searchCVU.email}', '${(details.completed || cleanData.business_date).replace('T', ' ').replace('Z', '')}', 'credit')`,
       );
       await this.markWebhookAsInactive(transaction.id);
     }
