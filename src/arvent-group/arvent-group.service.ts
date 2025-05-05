@@ -463,7 +463,7 @@ export class ArventGroupService {
     if (index === -1) {
       accountCredits.push({ cvu, amount, count: 1 });
     } else {
-      accountCredits[index].amount += Number(amount);
+      accountCredits[index].amount += parseFloat(amount);
       accountCredits[index].count += 1;
     }
   }
