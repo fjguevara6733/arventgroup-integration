@@ -79,6 +79,11 @@ export class ArventGroupService {
       id: 1,
       cvu: '0000058105193400884642',
     },
+    {
+      email: 'pablo@payexsrl.com',
+      id: 1,
+      cvu: '0000058104351016263797',
+    }
   ];
 
   constructor(
