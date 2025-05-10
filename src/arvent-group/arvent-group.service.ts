@@ -85,6 +85,7 @@ export class ArventGroupService {
       cvu: '0000058104351016263797',
     }
   ];
+  
 
   constructor(
     @InjectEntityManager('chronos')
