@@ -699,7 +699,7 @@ export class ArventGroupService {
     if (user[0]) throw 'Ya existe un cliente con este CUIT/CUIL o email.';
     const account = key
       ? await this.chronosEntityManager
-          .query(`SELECT * FROM "authorization" WHERE key = '${key}'`)
+          .query(`SELECT * FROM authorization WHERE key = '${key}'`)
           .then((response) => response[0])
       : 0;
     console.log('account', account);
@@ -1116,8 +1116,8 @@ export class ArventGroupService {
   async getEmail(email: string) {
     return await this.arventGroupEntityManager
       .query(
-        `SELECT * FROM "authorization"
-            WHERE "authorization".email = '${email}'`,
+        `SELECT * FROM authorization
+            WHERE authorization.email = '${email}'`,
       )
       .then((response) => response[0])
       .catch((error) => {
@@ -1128,12 +1128,12 @@ export class ArventGroupService {
   }
 
   async createVirtualAccount(body) {
-    console.log(`INSERT INTO "authorization" (email, key)
+    console.log(`INSERT INTO authorization (email, key)
         VALUES ('${body.email}', '${body.key}')`);
 
     return await this.arventGroupEntityManager
       .query(
-        `INSERT INTO "authorization" (email, key)
+        `INSERT INTO authorization (email, key)
         VALUES ('${body.email}', '${body.key}')`,
       )
       .catch((error) => {
