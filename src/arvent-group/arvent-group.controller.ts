@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Put,
+  Headers,
 } from '@nestjs/common';
 import { ArventGroupService } from './arvent-group.service';
 import {
@@ -117,6 +118,8 @@ export class ArventGroupController {
         res.status(HttpStatus.ACCEPTED).send(response);
       })
       .catch((error) => {
+        console.log(error);
+        
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error transactions report',
@@ -184,7 +187,6 @@ export class ArventGroupController {
     @Body() payload: DoRequestDtoDebin,
     @Res() res: Response,
   ) {
-    console.log("@Post('get-transaction-debin')");
     await this.arventGroupService
       .createDeposit(payload)
       .then((result) => {
@@ -247,9 +249,13 @@ export class ArventGroupController {
 
   @Post('create-natural-person')
   @ApiHeader({ name: 'api-key', required: true })
-  async createNaturalPerson(@Res() res: Response, @Body() body: PersonDTO) {
+  async createNaturalPerson(
+    @Res() res: Response,
+    @Body() body: PersonDTO,
+    @Headers('key') key: string,
+  ) {
     await this.arventGroupService
-      .createNaturalPerson(body)
+      .createNaturalPerson(body, key)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
@@ -554,10 +560,7 @@ export class ArventGroupController {
 
   @Put('change-name-bind')
   @ApiHeader({ name: 'api-key', required: true })
-  async updateNameBind(
-    @Res() res: Response,
-    @Body() body: updateNameBind,
-  ) {
+  async updateNameBind(@Res() res: Response, @Body() body: updateNameBind) {
     await this.arventGroupService
       .updateNameBind(body)
       .then((result) => {
@@ -573,6 +576,30 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error change-name-bind',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Post('virtual-account')
+  @ApiHeader({ name: 'api-key', required: true })
+  async createVirtualAccount(@Res() res: Response, @Body() body) {
+    await this.arventGroupService
+      .createVirtualAccount(body)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'create-virtual-account',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error create-virtual-account',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);

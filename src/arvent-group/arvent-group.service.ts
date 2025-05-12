@@ -83,9 +83,8 @@ export class ArventGroupService {
       email: 'pablo@payexsrl.com',
       id: 1,
       cvu: '0000058104351016263797',
-    }
+    },
   ];
-  
 
   constructor(
     @InjectEntityManager('chronos')
@@ -302,17 +301,16 @@ export class ArventGroupService {
     if (!this.validateEnum(TypeTransactions, body.type))
       throw 'Tipo de transacción no válida';
 
-    const emails = this.datos.find(
-      (e) =>
-        e.email.toLocaleLowerCase() === body.accountEmail.toLocaleLowerCase(),
-    );
+    const emails = await this.getEmail(body.accountEmail);
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
 
     if (body.limit === 0) body.limit = 10;
 
+    const typeTransaction =
+      body.type === 'all' ? '' : `AND type = '${body.type}'`;
     const data = await this.arventGroupEntityManager.query(
       `SELECT * FROM transactions
-      WHERE email = '${body.accountEmail}' AND type = '${body.type}'
+      WHERE email = '${body.accountEmail}' ${typeTransaction}
       LIMIT ${body.limit} OFFSET ${body.offset}; `,
     );
 
@@ -323,9 +321,11 @@ export class ArventGroupService {
         dateTransaction: e.dateTransaction,
         type: e.type,
         emailOriginDebit: e.email,
-        responseBank: JSON.parse(e.response),
+        responseBank:
+          typeof e.response === 'string' ? JSON.parse(e.response) : e.response,
       };
     });
+
     return response;
   }
 
@@ -519,10 +519,9 @@ export class ArventGroupService {
    */
   async stateBalance(where = '', isCalled = false) {
     if (isCalled) {
-      const emails = this.datos.find(
-        (e) => e.email.toLocaleLowerCase() === where.toLocaleLowerCase(),
-      );
-      where = `WHERE cvu = ${emails.cvu}`;
+      const emails = await this.getEmail(where);
+
+      where = `WHERE "authorizationId" = ${emails.id}`;
     }
     return await this.arventGroupEntityManager.query(
       `SELECT * FROM balance ${where}`,
@@ -537,9 +536,8 @@ export class ArventGroupService {
    */
   async createDeposit(body: DoRequestDtoDebin) {
     const { originCbu, amount, email } = body;
-    const emails = this.datos.find(
-      (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
-    );
+    const emails = await this.getEmail(email);
+
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
 
     const params: BindRequestInterface = {
@@ -554,6 +552,7 @@ export class ArventGroupService {
       concept: ConceptBind.VAR,
       expiration: 20,
     };
+
     const headers = {
       Authorization: `JWT ${await this.getToken()}`,
     };
@@ -569,7 +568,6 @@ export class ArventGroupService {
     const response = await axios(config)
       .then((response) => response.data)
       .catch((error) => {
-        console.log(error.response.data);
         throw error?.response?.data?.message;
       });
 
@@ -581,12 +579,10 @@ export class ArventGroupService {
     await this.arventGroupEntityManager
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', '${response.status}', '${emails.email}','${dateClean}', "debit")`,
+          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', '${response.status}', '${emails.email}','${dateClean}', 'credit')`,
       )
       .then((response) => response)
       .catch((error) => {
-        console.log(error);
-
         return error;
       });
 
@@ -655,10 +651,7 @@ export class ArventGroupService {
    * @returns
    */
   async transactionReportDebit(body: arventGetTransactions) {
-    const emails = this.datos.find(
-      (e) =>
-        e.email.toLocaleLowerCase() === body.accountEmail.toLocaleLowerCase(),
-    );
+    const emails = await this.getEmail(body.accountEmail);
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
 
     if (body.limit === 0) body.limit = 10;
@@ -687,7 +680,7 @@ export class ArventGroupService {
    * @param body
    * @returns
    */
-  async createNaturalPerson(body: PersonDTO) {
+  async createNaturalPerson(body: PersonDTO, key: string = '') {
     if (!this.validateEnum(normalResponse, body.regulatedEntity20))
       throw 'El campo entidad regulada solo permite los valores de Si o No';
 
@@ -698,15 +691,20 @@ export class ArventGroupService {
       throw 'El campo telefono solo admite telefonos de Argentina';
 
     const user = await this.arventGroupEntityManager.query(
-      `SELECT * FROM user WHERE cuitCuil = '${body.cuitCuil}' or email = '${body.email}'`,
+      `SELECT * FROM "user" WHERE "cuitCuil" = '${body.cuitCuil}' or email = '${body.email}'`,
     );
     if (user[0]) throw 'Ya existe un cliente con este CUIT/CUIL o email.';
-
+    const account = key
+      ? await this.chronosEntityManager
+          .query(`SELECT * FROM "authorization" WHERE key = '${key}'`)
+          .then((response) => response[0])
+      : 0;
+    console.log('account', account);
     const uuid = uuidv4();
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO user (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email)
-       VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.cuitCuil}', ${body.postalCode}, '${body.country}', '${body.address}', '${uuid}', '${body.email}')`,
+        `INSERT INTO "user" (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, "cuitCuil", postalCode, country, address, uuid, email, "authorizationId")
+       VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.cuitCuil}', ${body.postalCode}, '${body.country}', '${body.address}', '${uuid}', '${body.email}', ${account.id})`,
       )
       .catch((error) => error.driverError)
       .then((result) => result);
@@ -759,6 +757,7 @@ export class ArventGroupService {
    */
   async createClientCvu(body: createClientCvu) {
     const user = await this.validateUser(body.customerId);
+    const emails = await this.getEmail(user.email);
     const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
     const files = await this.arventGroupEntityManager
       .query(`SELECT * FROM files WHERE cuit ='${cuit}' `)
@@ -803,7 +802,14 @@ export class ArventGroupService {
 
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO clients (client_id, cuit, cvu, creation_date) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}')`,
+        `INSERT INTO clients (client_id, cuit, cvu, creation_date, "authorizationId") VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}', ${emails.id})`,
+      )
+      .then((response) => response)
+      .catch((error) => error);
+
+    await this.arventGroupEntityManager
+      .query(
+        `INSERT INTO balance (cvu, amount, "authorizationId") VALUES ('${response.cvu}', 0, ${emails.id})`,
       )
       .then((response) => response)
       .catch((error) => error);
@@ -848,6 +854,11 @@ export class ArventGroupService {
       .then((response) => response)
       .catch((error) => error);
 
+    await this.arventGroupEntityManager
+      .query(`INSERT INTO balance (cvu, amount) VALUES ('${response.cvu}', 0)`)
+      .then((response) => response)
+      .catch((error) => error);
+
     return response;
   }
 
@@ -863,6 +874,7 @@ export class ArventGroupService {
       throw 'El campo doctType sólo permite los valores definidos en el enumerador';
 
     const user = await this.validateUser(body.customerId);
+
     if (
       user.isNatural &&
       body.docType !== KycDocTypes.idCardBack &&
@@ -870,7 +882,7 @@ export class ArventGroupService {
     )
       throw 'El docType no es asignable para un usuario natural.';
 
-    const imageData = file.buffer;
+    const imageData = `"${file.buffer.toString('base64')}"`;
     const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
     const files = await this.arventGroupEntityManager
       .query(
@@ -880,7 +892,7 @@ export class ArventGroupService {
 
     if (files) {
       const id = files.id;
-      const queryUpdate = `UPDATE files SET data=?, mimetype = ? WHERE id = ?`;
+      const queryUpdate = `UPDATE files SET data=$1, mimetype = $2 WHERE id = $3`;
 
       await this.arventGroupEntityManager.query(queryUpdate, [
         imageData,
@@ -892,7 +904,7 @@ export class ArventGroupService {
     }
 
     const sql =
-      'INSERT INTO files (typefile, filename, mimetype, cuit, data) VALUES (?, ?, ?, ?, ?)';
+      'INSERT INTO files (typefile, filename, mimetype, cuit, data) VALUES ($1, $2, $3, $4, $5)';
     await this.arventGroupEntityManager
       .query(sql, [
         body.docType,
@@ -988,14 +1000,14 @@ export class ArventGroupService {
     const existClient = await this.arventGroupEntityManager
       .query(
         `
-      SELECT * FROM user WHERE uuid = '${customerId}'`,
+      SELECT * FROM "user" WHERE uuid = '${customerId}'`,
       )
       .then((response) => response[0])
       .catch((error) => error);
     const existClientJuridic = await this.arventGroupEntityManager
       .query(
         `
-      SELECT * FROM user_companies WHERE uuid = '${customerId}'`,
+      SELECT * FROM "user_companies" WHERE uuid = '${customerId}'`,
       )
       .then((response) => response[0])
       .catch((error) => error);
@@ -1095,6 +1107,33 @@ export class ArventGroupService {
       .then((response) => response.data)
       .catch((error) => {
         throw error?.response?.data?.message;
+      });
+  }
+
+  async getEmail(email: string) {
+    return await this.arventGroupEntityManager
+      .query(
+        `SELECT * FROM "authorization"
+            WHERE "authorization".email = '${email}'`,
+      )
+      .then((response) => response[0])
+      .catch(() => {
+        throw new Error('Error fetching emails');
+      });
+  }
+
+  async createVirtualAccount(body) {
+    console.log(`INSERT INTO "authorization" (email, key)
+        VALUES ('${body.email}', '${body.key}')`);
+
+    return await this.arventGroupEntityManager
+      .query(
+        `INSERT INTO "authorization" (email, key)
+        VALUES ('${body.email}', '${body.key}')`,
+      )
+      .catch((error) => {
+        console.log(error);
+        throw new Error('Error creating virtual account');
       });
   }
 }

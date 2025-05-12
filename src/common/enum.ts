@@ -37,6 +37,7 @@ export enum ConceptBind {
 export enum TypeTransactions {
   debit,
   credit,
+  all
 }
 
 export enum normalResponse {
