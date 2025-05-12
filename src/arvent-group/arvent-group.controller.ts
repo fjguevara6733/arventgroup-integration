@@ -129,7 +129,7 @@ export class ArventGroupController {
       });
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   @Get('transactions-update')
   async updateStatusTransactions() {
     try {
@@ -143,7 +143,7 @@ export class ArventGroupController {
     }
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   @Post('transactions-credit')
   async creditTransactions() {
     try {
@@ -209,7 +209,7 @@ export class ArventGroupController {
       });
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  // @Cron(CronExpression.EVERY_5_MINUTES)
   @Get('transactions-get-credits')
   async updateStatusTransactionsCredit() {
     try {
