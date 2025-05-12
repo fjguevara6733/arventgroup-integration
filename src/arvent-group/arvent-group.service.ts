@@ -1120,7 +1120,9 @@ export class ArventGroupService {
             WHERE "authorization".email = '${email}'`,
       )
       .then((response) => response[0])
-      .catch(() => {
+      .catch((error) => {
+        console.log('Error fetching emails', error);
+        
         throw new Error('Error fetching emails');
       });
   }
