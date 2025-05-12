@@ -522,7 +522,7 @@ export class ArventGroupService {
       const emails = await this.getEmail(where);
         console.log('error emails', emails);
 
-      where = `WHERE "authorizationId" = ${emails.id}`;
+      where = `WHERE authorizationId = ${emails.id}`;
     }
     return await this.arventGroupEntityManager.query(
       `SELECT * FROM balance ${where}`,
@@ -694,7 +694,7 @@ export class ArventGroupService {
       throw 'El campo telefono solo admite telefonos de Argentina';
 
     const user = await this.arventGroupEntityManager.query(
-      `SELECT * FROM "user" WHERE "cuitCuil" = '${body.cuitCuil}' or email = '${body.email}'`,
+      `SELECT * FROM "user" WHERE cuitCuil = '${body.cuitCuil}' or email = '${body.email}'`,
     );
     if (user[0]) throw 'Ya existe un cliente con este CUIT/CUIL o email.';
     const account = key
@@ -706,7 +706,7 @@ export class ArventGroupService {
     const uuid = uuidv4();
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO "user" (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, "cuitCuil", postalCode, country, address, uuid, email, "authorizationId")
+        `INSERT INTO "user" (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email, authorizationId)
        VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.cuitCuil}', ${body.postalCode}, '${body.country}', '${body.address}', '${uuid}', '${body.email}', ${account.id})`,
       )
       .catch((error) => error.driverError)
@@ -805,14 +805,14 @@ export class ArventGroupService {
 
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO clients (client_id, cuit, cvu, creation_date, "authorizationId") VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}', ${emails.id})`,
+        `INSERT INTO clients (client_id, cuit, cvu, creation_date, authorizationId) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}', ${emails.id})`,
       )
       .then((response) => response)
       .catch((error) => error);
 
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO balance (cvu, amount, "authorizationId") VALUES ('${response.cvu}', 0, ${emails.id})`,
+        `INSERT INTO balance (cvu, amount, authorizationId) VALUES ('${response.cvu}', 0, ${emails.id})`,
       )
       .then((response) => response)
       .catch((error) => error);
