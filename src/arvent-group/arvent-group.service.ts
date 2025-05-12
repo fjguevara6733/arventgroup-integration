@@ -520,12 +520,15 @@ export class ArventGroupService {
   async stateBalance(where = '', isCalled = false) {
     if (isCalled) {
       const emails = await this.getEmail(where);
+        console.log('error emails', emails);
 
       where = `WHERE "authorizationId" = ${emails.id}`;
     }
     return await this.arventGroupEntityManager.query(
       `SELECT * FROM balance ${where}`,
-    );
+    ).catch((error) => {
+      console.error('Error fetching balances:', error);
+    });
   }
 
   /**

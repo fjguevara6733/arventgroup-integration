@@ -119,7 +119,7 @@ export class ArventGroupController {
       })
       .catch((error) => {
         console.log(error);
-        
+
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error transactions report',
@@ -172,6 +172,8 @@ export class ArventGroupController {
         res.status(HttpStatus.ACCEPTED).send(response);
       })
       .catch((error) => {
+        console.log('error balances', error);
+
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error balances',
