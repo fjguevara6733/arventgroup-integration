@@ -600,7 +600,15 @@ export class ArventGroupService {
   async updateStatusTransactionsCredit() {
     let newBalance = 0;
     const data = await this.arventGroupEntityManager.query(
-      'SELECT * FROM transactions WHERE status = "PENDING" and type = "credit"',
+      `SELECT t1.* FROM transactions t1
+       WHERE t1.status IN("PENDING", "AWAITING_CONFIRMATION") 
+       AND t1.type = "credit" 
+       AND t1.dateTransaction = (
+       SELECT MAX(t2.dateTransaction) 
+       FROM transactions t2 
+       WHERE t2.idTransaction = t1.idTransaction
+       )
+       GROUP BY idTransaction`,
     );
     const balances = await this.stateBalance().then((response) => response);
 
@@ -629,21 +637,29 @@ export class ArventGroupService {
           console.log(error.response.data);
           throw error?.response?.data?.message;
         });
-      await this.arventGroupEntityManager
-        .query(
-          `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ('${transaction.idTransaction}', '${JSON.stringify(response)}', '${response.status}', '${transaction.email}','${response.start_date.replace('T', ' ').replace('Z', '')}', "credit")`,
-        )
-        .then((response) => response)
-        .catch((error) => error);
-      const { charge } = response;
-      newBalance = Number(balanceAccount.amount) + Number(charge.value.amount);
-      await this.arventGroupEntityManager
-        .query(
-          ` UPDATE balance SET amount = '${newBalance}' WHERE id = ${balanceAccount.id}`,
-        )
-        .then((response) => response)
-        .catch((error) => error);
+      const existingTransaction = await this.arventGroupEntityManager.query(
+        `SELECT * FROM transactions WHERE idTransaction = '${transaction.idTransaction}' AND status = '${response.status}'`,
+      );
+
+      if (existingTransaction.length === 0) {
+        await this.arventGroupEntityManager
+          .query(
+            `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
+        VALUES ('${transaction.idTransaction}', '${JSON.stringify(response)}', '${response.status}', '${transaction.email}','${response.start_date.replace('T', ' ').replace('Z', '')}', "credit")`,
+          )
+          .then((response) => response)
+          .catch((error) => error);
+
+        const { charge } = response;
+        newBalance =
+          Number(balanceAccount.amount) + Number(charge.value.amount);
+        await this.arventGroupEntityManager
+          .query(
+            `UPDATE balance SET amount = '${newBalance}' WHERE id = ${balanceAccount.id}`,
+          )
+          .then((response) => response)
+          .catch((error) => error);
+      }
     }
     return true;
   }
