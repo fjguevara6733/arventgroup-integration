@@ -243,7 +243,7 @@ export class ArventGroupService {
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
       origin_debit: {
-        cvu: emails.cvu,
+        cvu: dataClient.cvu,
         cuit: String(user.cuitCuil),
       },
       value: {
