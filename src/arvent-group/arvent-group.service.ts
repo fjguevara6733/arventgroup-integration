@@ -358,7 +358,7 @@ export class ArventGroupService {
       const { transaction_ids } = response;
       const config: AxiosRequestConfig = {
         method: 'GET',
-        url: `https://api.chronospay.io/alfred-wallet/v1/transaction/get-transaction/${transaction_ids[0]}`,
+        url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction_ids[0]}`,
         httpsAgent: this.httpsAgent,
       };
       const responseAxios = await axios(config);
