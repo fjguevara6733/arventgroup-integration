@@ -710,7 +710,7 @@ export class ArventGroupService {
       throw 'El campo telefono solo admite telefonos de Argentina';
 
     const user = await this.arventGroupEntityManager.query(
-      `SELECT * FROM "user" WHERE cuitCuil = '${body.cuitCuil}' or email = '${body.email}'`,
+      `SELECT * FROM \`user\` WHERE cuitCuil = '${body.cuitCuil}' or email = '${body.email}'`,
     );
     if (user[0]) throw 'Ya existe un cliente con este CUIT/CUIL o email.';
     const account = key
@@ -721,7 +721,7 @@ export class ArventGroupService {
     const uuid = uuidv4();
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO "user" (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email, "accountId")
+        `INSERT INTO \`user\` (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email, "accountId")
        VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.cuitCuil}', ${body.postalCode}, '${body.country}', '${body.address}', '${uuid}', '${body.email}', ${account.id})`,
       )
       .catch((error) => {
@@ -1022,7 +1022,7 @@ export class ArventGroupService {
     const existClient = await this.arventGroupEntityManager
       .query(
         `
-      SELECT * FROM "user" WHERE uuid = '${customerId}'`,
+      SELECT * FROM \`user\` WHERE uuid = '${customerId}'`,
       )
       .then((response) => response[0])
       .catch((error) => error);
