@@ -540,10 +540,11 @@ export class ArventGroupService {
         WHERE u.email = '${where}'
       `;
       const result = await this.arventGroupEntityManager.query(query);
-
+      console.log('result', result);
+      
       if (result.length === 0) throw 'Email no asociado a ninguna cuenta';
 
-      where = `WHERE "cvu" = '${result[0].cvu}'`;
+      where = `WHERE cvu = '${result[0].cvu}'`;
     }
     return await this.arventGroupEntityManager
       .query(`SELECT * FROM balance ${where}`)
