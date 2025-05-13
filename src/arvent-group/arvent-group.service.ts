@@ -1152,7 +1152,7 @@ export class ArventGroupService {
 
     return await this.arventGroupEntityManager
       .query(
-        `INSERT INTO "accounts" (email, key)
+        `INSERT INTO "accounts" (email, key, secret_key)
         VALUES ('${body.email}', '${body.key}', '${body.secretKey}')`,
       )
       .catch((error) => {
