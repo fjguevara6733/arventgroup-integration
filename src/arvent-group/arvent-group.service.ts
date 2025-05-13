@@ -1074,7 +1074,7 @@ export class ArventGroupService {
     const existClientJuridic = await this.arventGroupEntityManager
       .query(
         `
-      SELECT * FROM "user_companies" WHERE uuid = '${customerId}'`,
+      SELECT * FROM \`user_companies\` WHERE uuid = '${customerId}'`,
       )
       .then((response) => response[0])
       .catch((error) => error);
