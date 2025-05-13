@@ -1147,13 +1147,13 @@ export class ArventGroupService {
   }
 
   async createVirtualAccount(body) {
-    console.log(`INSERT INTO accounts (email, key)
-        VALUES ('${body.email}', '${body.key}')`);
+    console.log(`INSERT INTO accounts (email, key, secret_key)
+        VALUES ('${body.email}', '${body.key}', '${body.secretKey}')`);
 
     return await this.arventGroupEntityManager
       .query(
         `INSERT INTO "accounts" (email, key)
-        VALUES ('${body.email}', '${body.key}')`,
+        VALUES ('${body.email}', '${body.key}', '${body.secretKey}')`,
       )
       .catch((error) => {
         console.log(error);
