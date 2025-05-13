@@ -231,11 +231,14 @@ export class ArventGroupService {
     );
 
     if (Number(balances.amount) < Number(amount)) throw 'Fondos insuficientes';
-
+    const user = await this.arventGroupEntityManager
+      .query(`SELECT * FROM \`user\` WHERE email = '${body.email}'`)
+      .then((response) => response[0]);
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
       origin_debit: {
         cvu: emails.cvu,
+        cuit: String(user.cuitCuil),
       },
       value: {
         currency: CoinsFiat.ARS,
@@ -247,6 +250,7 @@ export class ArventGroupService {
       concept: ConceptBind.VAR,
       description: 'Pago Alfred',
     };
+    console.log('params', params);
 
     const headers = {
       Authorization: `JWT ${await this.getToken()}`,
@@ -585,7 +589,7 @@ export class ArventGroupService {
     await this.arventGroupEntityManager
       .query(
         `INSERT INTO transactions (idTransaction,response, status, email, dateTransaction, type)
-          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', '${response.status}', '${emails.email}','${dateClean}', 'credit')`,
+          VALUES ('${params.origin_id}', '${JSON.stringify(response)}', '${response.status}', '${emails.email}','${dateClean}', 'debit')`,
       )
       .then((response) => response)
       .catch((error) => {
