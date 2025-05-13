@@ -534,8 +534,10 @@ export class ArventGroupService {
   async stateBalance(where = '', isCalled = false) {
     if (isCalled) {
       const emails = await this.getEmail(where);
+      console.log('emails', emails);
 
       where = emails`WHERE accountId = ${emails.id}`;
+      console.log('where', where);
     }
     return await this.arventGroupEntityManager
       .query(`SELECT * FROM balance ${where}`)
