@@ -223,6 +223,7 @@ export class ArventGroupService {
     );
     if (emails === undefined) {
       emails = await this.getEmail(email);
+      console.log('emails', emails);
 
       if (emails === undefined) return 'Email no asociado a ninguna cuenta';
     }
@@ -234,6 +235,8 @@ export class ArventGroupService {
     const user = await this.arventGroupEntityManager
       .query(`SELECT * FROM \`user\` WHERE email = '${body.email}'`)
       .then((response) => response[0]);
+    console.log('user', user);
+
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
       origin_debit: {
