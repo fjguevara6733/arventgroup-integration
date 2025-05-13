@@ -714,7 +714,7 @@ export class ArventGroupService {
     );
     if (user[0]) throw 'Ya existe un cliente con este CUIT/CUIL o email.';
     const account = key
-      ? await this.chronosEntityManager
+      ? await this.arventGroupEntityManager
           .query(`SELECT * FROM accounts WHERE \`key\` = '${key}'`)
           .then((response) => response[0])
       : 0;
