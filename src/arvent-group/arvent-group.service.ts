@@ -721,8 +721,25 @@ export class ArventGroupService {
     const uuid = uuidv4();
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO \`user\` (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email, "accountId")
-       VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.cuitCuil}', ${body.postalCode}, '${body.country}', '${body.address}', '${uuid}', '${body.email}', ${account.id})`,
+        `INSERT INTO \`user\` (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email, \`accountId\`)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        [
+          body.regulatedEntity20,
+          body.politicPerson,
+          body.phone,
+          body.occupation,
+          body.name,
+          body.locality,
+          body.lastName,
+          body.fiscalSituation,
+          body.cuitCuil,
+          body.postalCode,
+          body.country,
+          body.address,
+          uuid,
+          body.email,
+          account.id,
+        ],
       )
       .catch((error) => {
         console.log('error', error);
