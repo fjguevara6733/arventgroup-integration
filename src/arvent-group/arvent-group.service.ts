@@ -733,7 +733,7 @@ export class ArventGroupService {
 
     const user = await this.arventGroupEntityManager
       .query(
-        `SELECT * FROM "user" WHERE cuitCuil = '${body.cuitCuil}' or email = '${body.email}'`,
+        `SELECT * FROM \`user\` WHERE cuitCuil = '${body.cuitCuil}' or email = '${body.email}'`,
       )
       .catch((error) => {
         console.log('error', error);
