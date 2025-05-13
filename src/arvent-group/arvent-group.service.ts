@@ -218,22 +218,25 @@ export class ArventGroupService {
    */
   async doTransaction(body: DoRequestDto) {
     const { destinationCbu, amount, email } = body;
-    let emails = this.datos.find(
-      (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
-    );
-    if (emails === undefined) {
-      emails = await this.getEmail(email);
-      console.log('emails', emails);
 
-      if (emails === undefined) return 'Email no asociado a ninguna cuenta';
-    }
-    const balances = await this.stateBalance(`WHERE cvu=${emails.cvu}`).then(
-      (response) => response[0],
-    );
+    const emails = await this.getEmail(email);
+    if (emails === undefined) return 'Email no asociado a ninguna cuenta';
+
+    const dataClient = await this.arventGroupEntityManager
+      .query(
+        `
+        SELECT * FROM clients WHERE accountId = '${emails.id}'`,
+      )
+      .then((response) => response[0]);
+    console.log('dataClient', dataClient);
+
+    const balances = await this.stateBalance(
+      `WHERE cvu=${dataClient.cvu}`,
+    ).then((response) => response[0]);
 
     if (Number(balances.amount) < Number(amount)) throw 'Fondos insuficientes';
     const user = await this.arventGroupEntityManager
-      .query(`SELECT * FROM \`user\` WHERE email = '${body.email}'`)
+      .query(`SELECT * FROM \`user\` WHERE email = '${emails.email}'`)
       .then((response) => response[0]);
     console.log('user', user);
 
