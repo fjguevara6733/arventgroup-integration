@@ -535,7 +535,7 @@ export class ArventGroupService {
     if (isCalled) {
       const query = `
         SELECT c.cvu 
-        FROM "user" u 
+        FROM \`user\` u 
         INNER JOIN clients c ON u.cuitCuil = c.cuit 
         WHERE u.email = '${where}'
       `;
