@@ -537,7 +537,7 @@ export class ArventGroupService {
 
       if (emails === undefined) return 'Email no asociado a ninguna cuenta';
 
-      where = `WHERE accountId = ${emails.id}`;
+      where = `WHERE "accountId" = ${Number(emails.id)}`;
     }
     return await this.arventGroupEntityManager
       .query(`SELECT * FROM balance ${where}`)
