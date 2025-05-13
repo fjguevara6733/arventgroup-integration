@@ -18,6 +18,7 @@ export interface BindRequestInterface {
   origin_id?: string;
   origin_debit?: {
     cvu: string;
+    cuit: string;
   };
   expiration?: number;
 }

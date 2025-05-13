@@ -138,3 +138,27 @@ export class changeAliasByCvu {
   @IsNotEmpty()
   label: string;
 }
+
+export class createClientCvuBind {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  cuit: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+}
+
+export class updateNameBind{
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  cvu: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+}

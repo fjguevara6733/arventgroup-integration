@@ -10,6 +10,8 @@ import {
   Res,
   UseInterceptors,
   UploadedFile,
+  Put,
+  Headers,
 } from '@nestjs/common';
 import { ArventGroupService } from './arvent-group.service';
 import {
@@ -24,8 +26,10 @@ import {
   arventGetTransactions,
   changeAliasByCvu,
   createClientCvu,
+  createClientCvuBind,
   DoRequestDto,
   DoRequestDtoDebin,
+  updateNameBind,
 } from 'src/common/dto/create-arvent-group.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Response } from 'express';
@@ -114,6 +118,8 @@ export class ArventGroupController {
         res.status(HttpStatus.ACCEPTED).send(response);
       })
       .catch((error) => {
+        console.log(error);
+
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error transactions report',
@@ -167,6 +173,8 @@ export class ArventGroupController {
         res.status(HttpStatus.ACCEPTED).send(response);
       })
       .catch((error) => {
+        console.log('error balances', error);
+
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error balances',
@@ -182,7 +190,6 @@ export class ArventGroupController {
     @Body() payload: DoRequestDtoDebin,
     @Res() res: Response,
   ) {
-    console.log("@Post('get-transaction-debin')");
     await this.arventGroupService
       .createDeposit(payload)
       .then((result) => {
@@ -247,9 +254,13 @@ export class ArventGroupController {
 
   @Post('create-natural-person')
   @ApiHeader({ name: 'api-key', required: true })
-  async createNaturalPerson(@Res() res: Response, @Body() body: PersonDTO) {
+  async createNaturalPerson(
+    @Res() res: Response,
+    @Body() body: PersonDTO,
+    @Headers('key') key: string,
+  ) {
     await this.arventGroupService
-      .createNaturalPerson(body)
+      .createNaturalPerson(body, key)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
@@ -501,15 +512,19 @@ export class ArventGroupController {
       });
   }
 
-  @Get('get-data-cvu/:cvu')
+  @Post('create-cvu-client-bind')
   @ApiHeader({ name: 'api-key', required: true })
-  async getAccount(@Res() res: Response, @Param('cvu') cvu) {
+  async createClientCvuBind(
+    @Res() res: Response,
+    @Body() body: createClientCvuBind,
+    @Headers('key') key: string,
+  ) {
     await this.arventGroupService
-      .getAccount(cvu)
+      .createCvuBind(body, key)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
-          message: 'upload-file',
+          message: 'create-cvu-client-bind',
           data: result,
         };
         res.status(HttpStatus.ACCEPTED).send(response);
@@ -518,7 +533,55 @@ export class ArventGroupController {
         console.log(error);
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
-          message: 'Error upload-file',
+          message: 'Error create-cvu-client-bind',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Put('change-name-bind')
+  @ApiHeader({ name: 'api-key', required: true })
+  async updateNameBind(@Res() res: Response, @Body() body: updateNameBind) {
+    await this.arventGroupService
+      .updateNameBind(body)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'change-name-bind',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error change-name-bind',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Post('virtual-account')
+  @ApiHeader({ name: 'api-key', required: true })
+  async createVirtualAccount(@Res() res: Response, @Body() body) {
+    await this.arventGroupService
+      .createVirtualAccount(body)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'create-virtual-account',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error create-virtual-account',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);

@@ -4,12 +4,16 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AuthGuard } from './common/guard/guard';
 import * as dotenv from 'dotenv'
 import { Logger } from '@nestjs/common';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api';
   dotenv.config()
   app.enableCors();
+
+  app.use(bodyParser.json({ limit: '50mb' })); // Límite para JSON
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true })); // Límite para datos codificados en URL
 
   const config = new DocumentBuilder()
     .setTitle('Chronos Prestamos')
