@@ -541,7 +541,7 @@ export class ArventGroupService {
       `;
       const result = await this.arventGroupEntityManager.query(query);
       console.log('result', result);
-      
+
       if (result.length === 0) throw 'Email no asociado a ninguna cuenta';
 
       where = `WHERE cvu = '${result[0].cvu}'`;
@@ -743,14 +743,14 @@ export class ArventGroupService {
     if (user[0]) throw 'Ya existe un cliente con este CUIT/CUIL o email.';
     const account = key
       ? await this.arventGroupEntityManager
-          .query(`SELECT * FROM accounts WHERE "key" = '${key}'`)
+          .query(`SELECT * FROM accounts WHERE \`key\` = '${key}'`)
           .then((response) => response[0])
       : 0;
     const uuid = uuidv4();
     await this.arventGroupEntityManager
       .query(
         `INSERT INTO \`user\` (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email, \`accountId\`)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           body.regulatedEntity20,
           body.politicPerson,
@@ -766,7 +766,7 @@ export class ArventGroupService {
           body.address,
           uuid,
           body.email,
-          account.id,
+          account ? account.id : 0,
         ],
       )
       .catch((error) => {
