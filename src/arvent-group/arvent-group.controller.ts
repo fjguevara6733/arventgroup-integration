@@ -538,9 +538,10 @@ export class ArventGroupController {
   async createClientCvuBind(
     @Res() res: Response,
     @Body() body: createClientCvuBind,
+    @Headers('key') key: string,
   ) {
     await this.arventGroupService
-      .createCvuBind(body)
+      .createCvuBind(body, key)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,

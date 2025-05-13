@@ -520,7 +520,6 @@ export class ArventGroupService {
   async stateBalance(where = '', isCalled = false) {
     if (isCalled) {
       const emails = await this.getEmail(where);
-      console.log('error emails', emails);
 
       where = `WHERE accountId = ${emails.id}`;
     }
@@ -856,7 +855,12 @@ export class ArventGroupService {
     return response;
   }
 
-  async createCvuBind(body: createClientCvuBind) {
+  async createCvuBind(body: createClientCvuBind, key: string) {
+    const account = key
+      ? await this.arventGroupEntityManager
+          .query(`SELECT * FROM accounts WHERE \`key\` = '${key}'`)
+          .then((response) => response[0])
+      : 0;
     const uuid = uuidv4().replace(/-/g, '').substring(0, 10); // Genera un UUID y elimina los guiones
     const numericUUID = parseInt(uuid, 16);
     const data: Client = {
@@ -888,13 +892,13 @@ export class ArventGroupService {
 
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO clients (client_id, cuit, cvu, creation_date) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}')`,
+        `INSERT INTO clients (client_id, cuit, cvu, creation_date, accountId) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}', ${account.id})`,
       )
       .then((response) => response)
       .catch((error) => error);
 
     await this.arventGroupEntityManager
-      .query(`INSERT INTO balance (cvu, amount) VALUES ('${response.cvu}', 0)`)
+      .query(`INSERT INTO balance (cvu, amount, accountId) VALUES ('${response.cvu}', 0, ${account.id})`)
       .then((response) => response)
       .catch((error) => error);
 
