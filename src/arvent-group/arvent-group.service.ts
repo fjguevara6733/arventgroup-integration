@@ -724,20 +724,26 @@ export class ArventGroupService {
     if (this.validarNumeroArgentina(body.phone) === false)
       throw 'El campo telefono solo admite telefonos de Argentina';
 
-    const user = await this.arventGroupEntityManager.query(
-      `SELECT * FROM \`user\` WHERE cuitCuil = '${body.cuitCuil}' or email = '${body.email}'`,
-    );
+    const user = await this.arventGroupEntityManager
+      .query(
+        `SELECT * FROM "user" WHERE cuitCuil = '${body.cuitCuil}' or email = '${body.email}'`,
+      )
+      .catch((error) => {
+        console.log('error', error);
+
+        return error.driverError;
+      });
     if (user[0]) throw 'Ya existe un cliente con este CUIT/CUIL o email.';
     const account = key
       ? await this.arventGroupEntityManager
-          .query(`SELECT * FROM accounts WHERE \`key\` = '${key}'`)
+          .query(`SELECT * FROM accounts WHERE "key" = '${key}'`)
           .then((response) => response[0])
       : 0;
     const uuid = uuidv4();
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO \`user\` (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email, \`accountId\`)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO "user" (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email, "accountId")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
         [
           body.regulatedEntity20,
           body.politicPerson,
@@ -874,7 +880,7 @@ export class ArventGroupService {
   async createCvuBind(body: createClientCvuBind, key: string) {
     const account = key
       ? await this.arventGroupEntityManager
-          .query(`SELECT * FROM accounts WHERE \`key\` = '${key}'`)
+          .query(`SELECT * FROM accounts WHERE "key" = '${key}'`)
           .then((response) => response[0])
       : 0;
     const uuid = uuidv4().replace(/-/g, '').substring(0, 10); // Genera un UUID y elimina los guiones
@@ -1061,7 +1067,7 @@ export class ArventGroupService {
     const existClient = await this.arventGroupEntityManager
       .query(
         `
-      SELECT * FROM \`user\` WHERE uuid = '${customerId}'`,
+      SELECT * FROM "user" WHERE uuid = '${customerId}'`,
       )
       .then((response) => response[0])
       .catch((error) => error);
