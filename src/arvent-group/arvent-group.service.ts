@@ -533,11 +533,17 @@ export class ArventGroupService {
    */
   async stateBalance(where = '', isCalled = false) {
     if (isCalled) {
-      const emails = await this.getEmail(where);
+      const query = `
+        SELECT c.cvu 
+        FROM "user" u 
+        INNER JOIN clients c ON u.cuitCuil = c.cuit 
+        WHERE u.email = '${where}'
+      `;
+      const result = await this.arventGroupEntityManager.query(query);
 
-      if (emails === undefined) return 'Email no asociado a ninguna cuenta';
+      if (result.length === 0) throw 'Email no asociado a ninguna cuenta';
 
-      where = `WHERE "accountId" = ${Number(emails.id)}`;
+      where = `WHERE "cvu" = '${result[0].cvu}'`;
     }
     return await this.arventGroupEntityManager
       .query(`SELECT * FROM balance ${where}`)
