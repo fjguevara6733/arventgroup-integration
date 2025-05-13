@@ -218,10 +218,14 @@ export class ArventGroupService {
    */
   async doTransaction(body: DoRequestDto) {
     const { destinationCbu, amount, email } = body;
-    const emails = this.datos.find(
+    let emails = this.datos.find(
       (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
     );
-    if (emails === undefined) return 'Email no asociado a ninguna cuenta';
+    if (emails === undefined) {
+      emails = await this.getEmail(email);
+
+      if (emails === undefined) return 'Email no asociado a ninguna cuenta';
+    }
     const balances = await this.stateBalance(`WHERE cvu=${emails.cvu}`).then(
       (response) => response[0],
     );
@@ -521,7 +525,7 @@ export class ArventGroupService {
     if (isCalled) {
       const emails = await this.getEmail(where);
 
-      where = `WHERE accountId = ${emails.id}`;
+      where = emails`WHERE accountId = ${emails.id}`;
     }
     return await this.arventGroupEntityManager
       .query(`SELECT * FROM balance ${where}`)
@@ -898,7 +902,9 @@ export class ArventGroupService {
       .catch((error) => error);
 
     await this.arventGroupEntityManager
-      .query(`INSERT INTO balance (cvu, amount, accountId) VALUES ('${response.cvu}', 0, ${account.id})`)
+      .query(
+        `INSERT INTO balance (cvu, amount, accountId) VALUES ('${response.cvu}', 0, ${account.id})`,
+      )
       .then((response) => response)
       .catch((error) => error);
 
