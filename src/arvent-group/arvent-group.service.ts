@@ -520,15 +520,15 @@ export class ArventGroupService {
   async stateBalance(where = '', isCalled = false) {
     if (isCalled) {
       const emails = await this.getEmail(where);
-        console.log('error emails', emails);
+      console.log('error emails', emails);
 
-      where = `WHERE authorizationId = ${emails.id}`;
+      where = `WHERE accountId = ${emails.id}`;
     }
-    return await this.arventGroupEntityManager.query(
-      `SELECT * FROM balance ${where}`,
-    ).catch((error) => {
-      console.error('Error fetching balances:', error);
-    });
+    return await this.arventGroupEntityManager
+      .query(`SELECT * FROM balance ${where}`)
+      .catch((error) => {
+        console.error('Error fetching balances:', error);
+      });
   }
 
   /**
@@ -715,17 +715,20 @@ export class ArventGroupService {
     if (user[0]) throw 'Ya existe un cliente con este CUIT/CUIL o email.';
     const account = key
       ? await this.chronosEntityManager
-          .query(`SELECT * FROM authorization WHERE key = '${key}'`)
+          .query(`SELECT * FROM accounts WHERE key = '${key}'`)
           .then((response) => response[0])
       : 0;
-    console.log('account', account);
     const uuid = uuidv4();
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO "user" (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email, authorizationId)
+        `INSERT INTO "user" (regulatedEntity20, politicPerson, phone, occupation, name, locality, lastName, fiscalSituation, cuitCuil, postalCode, country, address, uuid, email, "accountId")
        VALUES ('${body.regulatedEntity20}', '${body.politicPerson}', '${body.phone}', '${body.occupation}', '${body.name}', '${body.locality}', '${body.lastName}', '${body.fiscalSituation}', '${body.cuitCuil}', ${body.postalCode}, '${body.country}', '${body.address}', '${uuid}', '${body.email}', ${account.id})`,
       )
-      .catch((error) => error.driverError)
+      .catch((error) => {
+        console.log('error', error);
+
+        return error.driverError;
+      })
       .then((result) => result);
 
     return { customerId: uuid, ...body };
@@ -821,14 +824,14 @@ export class ArventGroupService {
 
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO clients (client_id, cuit, cvu, creation_date, authorizationId) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}', ${emails.id})`,
+        `INSERT INTO clients (client_id, cuit, cvu, creation_date, accountId) VALUES ('${data.client_id}', '${data.cuit}', '${response.cvu}', '${this.convertDate()}', ${emails.id})`,
       )
       .then((response) => response)
       .catch((error) => error);
 
     await this.arventGroupEntityManager
       .query(
-        `INSERT INTO balance (cvu, amount, authorizationId) VALUES ('${response.cvu}', 0, ${emails.id})`,
+        `INSERT INTO balance (cvu, amount, accountId) VALUES ('${response.cvu}', 0, ${emails.id})`,
       )
       .then((response) => response)
       .catch((error) => error);
@@ -1132,24 +1135,24 @@ export class ArventGroupService {
   async getEmail(email: string) {
     return await this.arventGroupEntityManager
       .query(
-        `SELECT * FROM authorization
-            WHERE authorization.email = '${email}'`,
+        `SELECT * FROM accounts
+            WHERE accounts.email = '${email}'`,
       )
       .then((response) => response[0])
       .catch((error) => {
         console.log('Error fetching emails', error);
-        
+
         throw new Error('Error fetching emails');
       });
   }
 
   async createVirtualAccount(body) {
-    console.log(`INSERT INTO authorization (email, key)
+    console.log(`INSERT INTO accounts (email, key)
         VALUES ('${body.email}', '${body.key}')`);
 
     return await this.arventGroupEntityManager
       .query(
-        `INSERT INTO authorization (email, key)
+        `INSERT INTO "accounts" (email, key)
         VALUES ('${body.email}', '${body.key}')`,
       )
       .catch((error) => {
