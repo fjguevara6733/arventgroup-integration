@@ -23,7 +23,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     //       password,
     //       database,
     //       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-    //       synchronize: false,
+    //       synchronize: true,
     //       logging: ['error'],
     //     };
     //   },
@@ -47,7 +47,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
           password,
           database,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: false,
+          synchronize: true,
           logging: ['error'],
         };
       },

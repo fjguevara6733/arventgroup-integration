@@ -371,7 +371,7 @@ export class ArventGroupService {
 
     const response = data.map((e) => {
       return {
-        id: e.idtransaction,
+        id: e.idTransaction,
         status: e.status,
         dateTransaction: e.datetransaction,
         type: e.type,
@@ -416,7 +416,7 @@ export class ArventGroupService {
         .catch((error) => error);
       await this._transactionEntityRepository
         .update(transaction.id, {
-          idtransaction: transaction.idtransaction,
+          idTransaction: transaction.idTransaction,
           status: dataResponse.status,
           response: JSON.stringify(dataResponse),
           email: transaction.email,
@@ -493,7 +493,7 @@ export class ArventGroupService {
     if (searchCVU) {
       const dataString = JSON.stringify(transaction.data);
       await this._transactionEntityRepository.save({
-        idtransaction: transaction.data.id,
+        idTransaction: transaction.data.id,
         response: dataString,
         status: 'COMPLETED',
         email: user.email,
@@ -511,7 +511,7 @@ export class ArventGroupService {
     const { buyerAccountCBU, origin_id } = details;
 
     const transactionData = await this._transactionEntityRepository.find({
-      where: { idtransaction: origin_id, status: 'PENDING' },
+      where: { idTransaction: origin_id, status: 'PENDING' },
     });
 
     this.updateAccountCredits(
@@ -527,7 +527,7 @@ export class ArventGroupService {
       if (searchCVU) {
         const dataString = JSON.stringify(transaction.data);
         await this._transactionEntityRepository.save({
-          idtransaction: origin_id,
+          idTransaction: origin_id,
           response: dataString,
           status: 'COMPLETED',
           email: searchCVU.email,
@@ -674,14 +674,14 @@ export class ArventGroupService {
       where: {
         status: In(['PENDING', 'AWAITING_CONFIRMATION']),
         type: 'credit',
-        idtransaction: Not(
+        idTransaction: Not(
           In(
             (
               await this._transactionEntityRepository.find({
                 where: { status: In(['COMPLETED', 'EXPIRED']) },
-                select: ['idtransaction'],
+                select: ['idTransaction'],
               })
-            ).map((t) => t.idtransaction),
+            ).map((t) => t.idTransaction),
           ),
         ),
       },
@@ -723,7 +723,7 @@ export class ArventGroupService {
         const existingTransaction =
           await this._transactionEntityRepository.find({
             where: {
-              idtransaction: transaction.idtransaction,
+              idTransaction: transaction.idTransaction,
               status: response.status,
             },
           });
@@ -731,7 +731,7 @@ export class ArventGroupService {
         if (existingTransaction.length === 0) {
           await this._transactionEntityRepository
             .save({
-              idtransaction: transaction.idtransaction,
+              idTransaction: transaction.idTransaction,
               response: JSON.stringify(response),
               status: response.status,
               email: transaction.email,
@@ -783,7 +783,7 @@ export class ArventGroupService {
 
     const response = data.map((e) => {
       return {
-        id: e.idtransaction,
+        id: e.idTransaction,
         status: e.status,
         dateTransaction: e.datetransaction,
         emailOriginDebit: e.email,

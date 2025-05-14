@@ -7,7 +7,7 @@ export class Payment {
   id: number;
 
   @Column({ name: 'idTransaction', type: 'varchar', length: 50, nullable: true })
-  idtransaction: string;
+  idTransaction: string;
 
   @Column({ name: 'dateTransaction', type: 'timestamp', nullable: true })
   datetransaction: Date;
