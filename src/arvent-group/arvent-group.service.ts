@@ -117,6 +117,11 @@ export class ArventGroupService {
     @InjectEntityManager('chronos')
     private readonly chronosEntityManager: EntityManager,
   ) {}
+  
+  /**
+   * @method getEmail
+   * Servicio para obtener el email de la cuenta
+   * */
   async balances(email) {
     const emails = this.datos.find(
       (e) => e.email.toLocaleLowerCase() === email.toLocaleLowerCase(),
