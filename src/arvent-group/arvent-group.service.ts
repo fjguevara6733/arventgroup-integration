@@ -382,6 +382,7 @@ export class ArventGroupService {
     return response;
   }
 
+
   /**
    * @method updateStatusTransactions
    * Servicio para actualizar los estados de las transacciones realizadas
