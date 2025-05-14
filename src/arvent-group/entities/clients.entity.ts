@@ -5,7 +5,7 @@ export class ClientEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'clientId', type: 'varchar', length: 50, nullable: true })
+  @Column({ name: 'client_id', type: 'varchar', length: 50, nullable: true })
   clientId: string;
 
   @Column({ type: 'varchar', length: 11, nullable: true })

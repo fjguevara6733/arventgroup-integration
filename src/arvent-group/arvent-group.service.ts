@@ -117,7 +117,7 @@ export class ArventGroupService {
     @InjectEntityManager('chronos')
     private readonly chronosEntityManager: EntityManager,
   ) {}
-  
+
   /**
    * @method getEmail
    * Servicio para obtener el email de la cuenta
@@ -383,7 +383,6 @@ export class ArventGroupService {
 
     return response;
   }
-
 
   /**
    * @method updateStatusTransactions
@@ -1317,8 +1316,12 @@ export class ArventGroupService {
       });
   }
 
-  async createVirtualAccount(body) {
-    const data = await this._accountEntityRepository.create({
+  async createVirtualAccount(body: {
+    email: string;
+    key: string;
+    secretKey: string;
+  }) {
+    const data = this._accountEntityRepository.create({
       email: body.email,
       key: body.key,
       secretKey: body.secretKey,
@@ -1327,7 +1330,7 @@ export class ArventGroupService {
       .save(data)
       .then((response) => response)
       .catch((error) => {
-        console.log(error);
+        console.error('Database error:', error);
         throw new Error('Error creating virtual account');
       });
   }
