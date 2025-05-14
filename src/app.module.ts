@@ -31,7 +31,7 @@ import { DatabaseModule } from './database.module';
       port: 3306,
       username: 'chronostest',
       password: ',h1e6#STJBqZ9sSj',
-      database: 'Chronos_dev_0.1.0',
+      database: 'chronos_dev_0.1.0',
     }),
     DatabaseModule,
     ArventGroupModule,
