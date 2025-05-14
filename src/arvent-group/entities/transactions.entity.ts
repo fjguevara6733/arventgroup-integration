@@ -6,7 +6,7 @@ export class Transaction {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 50, nullable: false })
+  @Column({ name: 'idTransaction', type: 'varchar', length: 50, nullable: false })
   idtransaction: string;
 
   @Column({ name: 'dateTransaction', type: 'timestamp', nullable: true })

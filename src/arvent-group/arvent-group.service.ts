@@ -27,7 +27,6 @@ import { readFileSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { PersonDTO, UserCompanyDTO } from 'src/common/dto/user.dto';
 import { UploadedDocDto } from 'src/common/dto/upload-file.dto';
-import { CustomerEntity } from './entities/customer.entity';
 import { Balance } from './entities/balance.entity';
 import { ClientEntity } from './entities/clients.entity';
 import { FileEntity } from './entities/files.entity';
@@ -97,8 +96,6 @@ export class ArventGroupService {
   ];
 
   constructor(
-    @InjectRepository(CustomerEntity)
-    private _customersEntityRepository: Repository<CustomerEntity>,
     @InjectRepository(Balance)
     private _balanceEntityRepository: Repository<Balance>,
     @InjectRepository(ClientEntity)

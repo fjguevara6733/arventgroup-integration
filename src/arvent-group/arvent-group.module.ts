@@ -2,7 +2,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ArventGroupController } from './arvent-group.controller';
 import { ArventGroupService } from './arvent-group.service';
 import { Module } from '@nestjs/common';
-import { CustomerEntity } from './entities/customer.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { Account } from './entities/account.entity';
 import { User } from './entities/user.entity';
@@ -16,7 +15,7 @@ import { ClientEntity } from './entities/clients.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CustomerEntity, Account, User, UserCompany, Transaction, Payment, Balance, Webhook, FileEntity, ClientEntity]), // Conexión para arventGroupEntityManager
+    TypeOrmModule.forFeature([Account, User, UserCompany, Transaction, Payment, Balance, Webhook, FileEntity, ClientEntity]), // Conexión para arventGroupEntityManager
     TypeOrmModule.forFeature([], 'chronos'),
     ScheduleModule.forRoot(),
   ],
