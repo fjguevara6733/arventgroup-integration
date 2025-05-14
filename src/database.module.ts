@@ -23,7 +23,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     //       password,
     //       database,
     //       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-    //       synchronize: true,
+    //       synchronize: false,
     //       logging: ['error'],
     //     };
     //   },
@@ -32,11 +32,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: () => {
-        const host = 'database-chronospay.cnaaegyaw8sq.us-east-2.rds.amazonaws.com';
+        const host = 'database-chronospay-prod.cz6kkw664bxb.us-east-1.rds.amazonaws.com';
         const port = 3306;
-        const username = 'chronostest';
-        const password = ',h1e6#STJBqZ9sSj';
-        const database = 'arvent_group_dev';
+        const username = 'chronoslive';
+        const password = 'h}z4fh92VBKu*xV<';
+        const database = 'arvent_group';
 
         return {
           name: 'arventGroup',
@@ -47,7 +47,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
           password,
           database,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: true,
+          synchronize: false,
           logging: ['error'],
         };
       },

@@ -12,7 +12,7 @@ import { DatabaseModule } from './database.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     // TypeOrmModule.forRoot({
     //   name: 'chronos',
@@ -27,11 +27,13 @@ import { DatabaseModule } from './database.module';
     TypeOrmModule.forRoot({
       name: 'chronos',
       type: 'mysql',
-      host: 'database-chronospay.cnaaegyaw8sq.us-east-2.rds.amazonaws.com',
+      host: 'database-chronospay-prod.cz6kkw664bxb.us-east-1.rds.amazonaws.com',
       port: 3306,
-      username: 'chronostest',
-      password: ',h1e6#STJBqZ9sSj',
-      database: 'chronos_dev_0.1.0',
+      username: 'chronoslive',
+      password: 'h}z4fh92VBKu*xV<',
+      database: 'chronos_live_0.1.0',
+      autoLoadEntities: true,
+      synchronize: true,
     }),
     DatabaseModule,
     ArventGroupModule,
