@@ -1,50 +1,56 @@
-// person.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column
+} from 'typeorm';
 
-@Entity({ name: 'user', database: 'arvent_group' })
-export class PersonEntity {
+@Entity('user')
+export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  regulatedEntity20: string;
-
-  @Column()
-  politicPerson: string;
-
-  @Column()
-  phone: string;
-
-  @Column()
-  occupation: string;
-
-  @Column()
+  @Column({ type: 'varchar', length: 255, nullable: true })
   name: string;
 
-  @Column()
+  @Column({ name:'lastName', type: 'varchar', length: 255, nullable: true })
+  lastname: string;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  address: string;
+
+  @Column({ name: 'postalCode', type: 'int', nullable: true })
+  postalCode: number;
+
+  @Column({ name: 'cuitCuil', type: 'varchar', length: 11, nullable: true })
+  cuitcuil: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
   locality: string;
 
-  @Column()
-  lastName: string;
-
-  @Column()
-  fiscalSituation: string;
-
-  @Column()
-  fileCuitFront: string;
-
-  @Column()
-  fileCuitBack: string;
-
-  @Column()
-  cuitCuil: string;
-
-  @Column({ type: 'int' })
-  cp: number;
-
-  @Column()
+  @Column({ type: 'varchar', length: 255, nullable: true })
   country: string;
 
-  @Column()
-  address: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  occupation: string;
+
+  @Column({ name:'fiscalSituation', type: 'varchar', length: 50, nullable: true })
+  fiscalsituation: string;
+
+  @Column({ name: 'regulatedEntity20',type: 'varchar', length: 10, nullable: true, default: 'false' })
+  regulatedEntity20: string;
+
+  @Column({ name: 'politicPerson',type: 'varchar', length: 10, nullable: true, default: 'false' })
+  politicPerson: string;
+
+  @Column({ type: 'text', nullable: true })
+  uuid: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
+  email: string;
+
+  @Column({ type: 'int', nullable: true })
+  accountId: number;
 }

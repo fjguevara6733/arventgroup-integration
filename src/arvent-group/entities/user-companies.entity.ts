@@ -1,67 +1,58 @@
-// company.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-@Entity({ name: 'user_companies', database: 'arvent_group' })
-export class Company {
+@Entity('user_companies')
+export class UserCompany {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  businessName: string;
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  business_name: string;
 
-  @Column()
-  taxId: string;
-
-  @Column()
+  @Column({ type: 'varchar', length: 255, nullable: true })
   address: string;
 
-  @Column()
-  postalCode: string;
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  postal_code: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255, nullable: true })
   city: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255, nullable: true })
   country: string;
 
-  @Column({ type: 'date' })
-  registrationDate: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  registration_date: Date;
 
-  @Column()
-  mainActivity: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  main_activity: string;
 
-  @Column()
-  headquartersPhone: string;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  headquarters_phone: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 255, nullable: true })
   email: string;
 
-  @Column()
-  contractStatuteAttachment: string;
+  @Column({ type: 'varchar', length: 10, nullable: true, default: 'false' })
+  subject_to_article_20: string;
 
-  @Column()
-  lastBalanceAttachment: string;
+  @Column({ type: 'varchar', length: 10, nullable: true, default: 'false' })
+  politic_person: string;
 
-  @Column()
-  AFIPRegistrationCertificateAttachment: string;
+  @Column({ type: 'varchar', length: 10, nullable: true, default: 'false' })
+  regulated_entity_20: string;
 
-  @Column()
-  IBBRegistrationCertificateAttachment: string;
+  @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
+  participation_percentage: number;
 
-  @Column()
-  notaryActAttachment: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  name: string;
 
-  @Column()
-  subjectToArticle20: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  last_name: string;
 
-  @Column()
-  politicPerson: string;
+  @Column({ type: 'varchar', length: 11, nullable: true })
+  cuit_cdi_cie: string;
 
-  @Column()
-  regulatedEntity20: string;
-
-  @Column({ type: 'float' })
-  participationPercentage: number;
-
-  // Resto de los campos de la tabla Company
+  @Column({ type: 'text', nullable: true })
+  uuid: string;
 }
