@@ -27,7 +27,7 @@ import { DatabaseModule } from './database.module';
     TypeOrmModule.forRoot({
       name: 'chronos',
       type: 'mysql',
-      host: 'http://database-chronospay.cnaaegyaw8sq.us-east-2.rds.amazonaws.com',
+      host: 'database-chronospay.cnaaegyaw8sq.us-east-2.rds.amazonaws.com',
       port: 3306,
       username: 'chronostest',
       password: ',h1e6#STJBqZ9sSj',

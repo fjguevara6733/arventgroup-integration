@@ -32,7 +32,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: () => {
-        const host = 'http://database-chronospay.cnaaegyaw8sq.us-east-2.rds.amazonaws.com';
+        const host = 'database-chronospay.cnaaegyaw8sq.us-east-2.rds.amazonaws.com';
         const port = 3306;
         const username = 'chronostest';
         const password = ',h1e6#STJBqZ9sSj';
