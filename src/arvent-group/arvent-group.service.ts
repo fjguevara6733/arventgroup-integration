@@ -1224,7 +1224,7 @@ export class ArventGroupService {
       .findOne({
         where: { cuit: cuit },
       })
-      .then((response) => response[0])
+      .then((response) => response)
       .catch((error) => error);
 
     if (existCvu && needError)
@@ -1308,7 +1308,7 @@ export class ArventGroupService {
       .findOne({
         where: { email },
       })
-      .then((response) => response[0])
+      .then((response) => response)
       .catch((error) => {
         console.log('Error fetching emails', error);
 
