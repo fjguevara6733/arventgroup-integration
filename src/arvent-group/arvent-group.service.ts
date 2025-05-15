@@ -1311,6 +1311,9 @@ export class ArventGroupService {
   async getEmail(email: string) {
     return await this._accountEntityRepository
       .findOne({
+        select: {
+          email: true,
+        },
         where: { email },
       })
       .then((response) => response[0])
