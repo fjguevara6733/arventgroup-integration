@@ -839,7 +839,7 @@ export class ArventGroupService {
           .findOne({
             where: { key },
           })
-          .then((response) => response[0])
+          .then((response) => response)
       : 0;
     const uuid = uuidv4();
     await this._userEntityRepository
