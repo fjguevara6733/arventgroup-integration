@@ -585,13 +585,18 @@ export class ArventGroupService {
         where: { email: where.email },
       });
 
-      const client = await this._clientEntityRepository.findOne({
-        where: { cuit: user.cuitcuil },
-      });
+      if (user) {
+        const client = await this._clientEntityRepository.findOne({
+          where: { cuit: user.cuitcuil },
+        });
 
-      if (!client) throw 'Email no asociado a ninguna cuenta';
+        if (!client) throw 'Email no asociado a ninguna cuenta';
 
-      filter = { cvu: client.cvu };
+        filter = { cvu: client.cvu };
+      } else {
+        const cvu = this.datos.find((e) => e.email === where.email).cvu;
+        filter = { cvu: cvu };
+      }
     }
     return await this._balanceEntityRepository.find({
       where: filter,
