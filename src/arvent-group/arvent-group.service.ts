@@ -1316,7 +1316,7 @@ export class ArventGroupService {
         },
         where: { email },
       })
-      .then((response) => response[0])
+      .then((response) => response)
       .catch((error) => {
         console.log('Error fetching emails', error);
 
