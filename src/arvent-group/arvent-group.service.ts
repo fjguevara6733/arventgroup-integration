@@ -836,7 +836,7 @@ export class ArventGroupService {
           })
           .then((response) => response)
       : 0;
-    const uuid = uuidv4();
+    const uuid = body.customerId ? body.customerId : uuidv4();
     await this._userEntityRepository
       .save({
         regulatedEntity20: body.regulatedEntity20, // Adjusted to match the entity property

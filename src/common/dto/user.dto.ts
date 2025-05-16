@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { normalResponse } from '../enum';
@@ -158,4 +159,9 @@ export class PersonDTO {
   @IsString()
   @IsEmail()
   email: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  customerId: string;
 }
