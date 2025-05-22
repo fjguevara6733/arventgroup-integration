@@ -588,7 +588,7 @@ export class ArventGroupController {
       });
   }
 
-  @Post('get-transaction-by/:id')
+  @Get('get-transaction-by/:id')
   @ApiHeader({ name: 'api-key', required: true })
   async getTransactionById(
     @Res() res: Response,
