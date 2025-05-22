@@ -36,6 +36,7 @@ import { Payment } from './entities/payments.entity';
 import { UserCompany } from './entities/user-companies.entity';
 import { User } from './entities/user.entity';
 import { Account } from './entities/account.entity';
+import { LogsEntity } from './entities/logs.entity';
 
 @Injectable()
 export class ArventGroupService {
@@ -114,6 +115,8 @@ export class ArventGroupService {
     private _userEntityRepository: Repository<User>,
     @InjectRepository(Account)
     private _accountEntityRepository: Repository<Account>,
+    @InjectRepository(LogsEntity)
+    private _logsEntityRepository: Repository<LogsEntity>,
     @InjectEntityManager('chronos')
     private readonly chronosEntityManager: EntityManager,
   ) {}
@@ -256,8 +259,18 @@ export class ArventGroupService {
       .findOne({
         where: { accountId: emails.id },
       })
-      .then((response) => response);
-    console.log('dataClient', dataClient);
+      .then((response) => response)
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({ accountId: emails.id }),
+          message: error,
+          date: this.convertDate(),
+          type: 'client-sql',
+          method: 'POST',
+          url: '/send-transaction',
+        });
+        return error;
+      });
 
     const balances = await this.stateBalance({ cvu: dataClient.cvu }).then(
       (response) => response[0],
@@ -302,8 +315,16 @@ export class ArventGroupService {
 
     const response = await axios(config)
       .then((response) => response)
-      .catch((error) => {
+      .catch(async (error) => {
         console.log(error.response.data);
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(config),
+          message: error?.response?.data?.message,
+          date: this.convertDate(),
+          type: 'bind-transfer',
+          method: 'POST',
+          url: '/send-transaction',
+        });
         throw error?.response?.data?.message;
       });
     const data = response.data;
@@ -318,7 +339,23 @@ export class ArventGroupService {
         dateTransaction: this.convertDate(),
       })
       .then((response) => response)
-      .catch((error) => error);
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({
+            idTransaction: params.origin_id,
+            response: dataString,
+            status: data.status,
+            email: body.email,
+            dateTransaction: this.convertDate(),
+          }),
+          message: error,
+          date: this.convertDate(),
+          type: 'transaction-sql',
+          method: 'POST',
+          url: '/send-transaction',
+        });
+        return error;
+      });
 
     await this._paymentEntityRepository
       .save({
@@ -329,7 +366,23 @@ export class ArventGroupService {
         dateTransaction: this.convertDate(),
       })
       .then((response) => response)
-      .catch((error) => error);
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({
+            idTransaction: params.origin_id,
+            response: dataString,
+            status: data.status,
+            email: body.email,
+            dateTransaction: this.convertDate(),
+          }),
+          message: error,
+          date: this.convertDate(),
+          type: 'payment-sql',
+          method: 'POST',
+          url: '/send-transaction',
+        });
+        return error;
+      });
 
     const newBalance = Number(balances.amount) - Number(body.amount);
     await this._balanceEntityRepository
@@ -342,7 +395,19 @@ export class ArventGroupService {
         },
       )
       .then((response) => response)
-      .catch((error) => error);
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({
+            amount: newBalance,
+          }),
+          message: error,
+          date: this.convertDate(),
+          type: 'balance-sql',
+          method: 'POST',
+          url: '/send-transaction',
+        });
+        return error;
+      });
 
     return dataString;
   }
@@ -357,17 +422,32 @@ export class ArventGroupService {
       throw 'Tipo de transacción no válida';
 
     const emails = await this.getEmail(body.accountEmail);
-    if (emails === undefined) return 'Email no asociado a ninguna cuenta';
+    if (emails === undefined) throw 'Email no asociado a ninguna cuenta';
 
     if (body.limit === 0) body.limit = 10;
 
     const typeTransaction =
       body.type === 'all' ? In(['credit', 'debit']) : body.type;
-    const data = await this._transactionEntityRepository.find({
-      where: { email: emails.email, type: typeTransaction },
-      take: body.limit,
-      skip: body.offset,
-    });
+    const data = await this._transactionEntityRepository
+      .find({
+        where: { email: emails.email, type: typeTransaction },
+        take: body.limit,
+        skip: body.offset,
+      })
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({
+            email: emails.email,
+            type: typeTransaction,
+          }),
+          message: error,
+          date: this.convertDate(),
+          type: 'transaction-sql',
+          method: 'POST',
+          url: '/transactions-report',
+        });
+        return error;
+      });
 
     const response = data.map((e) => {
       return {
@@ -404,7 +484,17 @@ export class ArventGroupService {
         url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction_ids[0]}`,
         httpsAgent: this.httpsAgent,
       };
-      const responseAxios = await axios(config);
+      const responseAxios = await axios(config).catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(config),
+          message: error,
+          date: this.convertDate(),
+          type: 'bind-get-transaction',
+          method: 'POST',
+          url: '/transactions-update',
+        });
+        return error;
+      });
       const data = responseAxios.data;
       const dataResponse = data.data;
       await this._paymentEntityRepository
@@ -413,7 +503,20 @@ export class ArventGroupService {
           response: JSON.stringify(dataResponse),
         })
         .then((response) => response)
-        .catch((error) => error);
+        .catch(async (error) => {
+          await this._logsEntityRepository.save({
+            request: JSON.stringify({
+              status: dataResponse.status,
+              response: JSON.stringify(dataResponse),
+            }),
+            message: error,
+            date: this.convertDate(),
+            type: 'payment-sql',
+            method: 'UPDATE',
+            url: '/transactions-update',
+          });
+          return error;
+        });
       await this._transactionEntityRepository
         .update(transaction.id, {
           idTransaction: transaction.idTransaction,
@@ -426,7 +529,26 @@ export class ArventGroupService {
           type: 'debit',
         })
         .then((response) => response)
-        .catch((error) => error);
+        .catch(async (error) => {
+          await this._logsEntityRepository.save({
+            request: JSON.stringify({
+              idTransaction: transaction.idTransaction,
+              status: dataResponse.status,
+              response: JSON.stringify(dataResponse),
+              email: transaction.email,
+              datetransaction: dataResponse.business_date
+                .replace('T', ' ')
+                .replace('Z', ''),
+              type: 'debit',
+            }),
+            message: error,
+            date: this.convertDate(),
+            type: 'transaction-sql',
+            method: 'POST',
+            url: '/transactions-update',
+          });
+          return error;
+        });
     }
     return true;
   }
@@ -437,8 +559,6 @@ export class ArventGroupService {
     const webhooks = await this._webhookEntityRepository.find({
       where: { status: 'active' },
     });
-    console.log('webhooks', webhooks);
-
     const transactions = webhooks.map((webhook) => {
       const dataJson = JSON.parse(webhook.response);
       return {
@@ -452,7 +572,6 @@ export class ArventGroupService {
         date: webhook.date,
       };
     });
-    console.log('transactions', transactions);
 
     for (const transaction of transactions) {
       const { type } = transaction;
@@ -464,7 +583,7 @@ export class ArventGroupService {
       }
     }
 
-    await this.updateBalances(accountCredits);
+    if (accountCredits.length > 0) await this.updateBalances(accountCredits);
 
     return accountCredits;
   }
@@ -564,8 +683,16 @@ export class ArventGroupService {
         const total = Number(dataBalance.amount) + account.amount;
         await this._balanceEntityRepository
           .update(dataBalance.id, { amount: total })
-          .catch((error) => {
-            console.error('Error updating balance:', error);
+          .catch(async (error) => {
+            await this._logsEntityRepository.save({
+              request: JSON.stringify({ amount: total }),
+              message: error,
+              date: this.convertDate(),
+              type: 'balance-sql',
+              method: 'UPDATE',
+              url: '/transactions-credit',
+            });
+            return error;
           });
       }
     }
@@ -581,21 +708,57 @@ export class ArventGroupService {
   async stateBalance(where: any, isCalled = false) {
     let filter = {};
     if (isCalled) {
-      const user = await this._userEntityRepository.findOne({
-        where: { email: where.email },
-      });
+      const user = await this._userEntityRepository
+        .findOne({
+          where: { email: where.email },
+        })
+        .catch(async (error) => {
+          await this._logsEntityRepository.save({
+            request: JSON.stringify({ email: where.email }),
+            message: error,
+            date: this.convertDate(),
+            type: 'user-sql',
+            method: 'POST',
+            url: '/balance',
+          });
+          return error;
+        });
 
-      const client = await this._clientEntityRepository.findOne({
-        where: { cuit: user.cuitcuil },
-      });
+      const client = await this._clientEntityRepository
+        .findOne({
+          where: { cuit: user.cuitcuil },
+        })
+        .catch(async (error) => {
+          await this._logsEntityRepository.save({
+            request: JSON.stringify({ cuit: user.cuitcuil }),
+            message: error,
+            date: this.convertDate(),
+            type: 'client-sql',
+            method: 'POST',
+            url: '/balance',
+          });
+          return error;
+        });
 
       if (!client) throw 'Email no asociado a ninguna cuenta';
 
       filter = { cvu: client.cvu };
     }
-    return await this._balanceEntityRepository.find({
-      where: filter,
-    });
+    return await this._balanceEntityRepository
+      .find({
+        where: filter,
+      })
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(filter),
+          message: error,
+          date: this.convertDate(),
+          type: 'client-sql',
+          method: 'POST',
+          url: '/balance',
+        });
+        return error;
+      });
   }
 
   /**
@@ -637,7 +800,15 @@ export class ArventGroupService {
 
     const response = await axios(config)
       .then((response) => response.data)
-      .catch((error) => {
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(config),
+          message: error?.response?.data?.message,
+          date: this.convertDate(),
+          type: 'bind-debin',
+          method: 'POST',
+          url: '/get-transaction-debin',
+        });
         throw error?.response?.data?.message;
       });
 
@@ -656,7 +827,22 @@ export class ArventGroupService {
         type: 'credit',
       })
       .then((response) => response)
-      .catch((error) => {
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({
+            idTransaction: params.origin_id,
+            response: JSON.stringify(response),
+            status: response.status,
+            email: emails.email,
+            dateTransaction: dateClean,
+            type: 'credit',
+          }),
+          message: error,
+          date: this.convertDate(),
+          type: 'transaction-sql',
+          method: 'POST',
+          url: '/get-transaction-debin',
+        });
         return error;
       });
 
@@ -716,8 +902,15 @@ export class ArventGroupService {
 
         const response = await axios(config)
           .then((response) => response.data)
-          .catch((error) => {
-            console.log(error.response.data);
+          .catch(async (error) => {
+            await this._logsEntityRepository.save({
+              request: JSON.stringify(config),
+              message: error?.response?.data?.message,
+              date: this.convertDate(),
+              type: 'bind-debin',
+              method: 'GET',
+              url: '/transactions-get-credit',
+            });
             throw error?.response?.data?.message;
           });
         const existingTransaction =
@@ -809,6 +1002,9 @@ export class ArventGroupService {
     if (this.validarNumeroArgentina(body.phone) === false)
       throw 'El campo telefono solo admite telefonos de Argentina';
 
+    if (body.cuitCuil.length < 11)
+      throw 'El campo cuit/cuil debe tener 11 digitos';
+
     const user = await this._userEntityRepository
       .find({
         select: {
@@ -821,8 +1017,18 @@ export class ArventGroupService {
         ],
       })
       .then((response) => response)
-      .catch((error) => {
-        console.log('error', error);
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify([
+            { cuitcuil: body.cuitCuil },
+            { email: body.email.toLocaleLowerCase() },
+          ]),
+          message: error,
+          date: this.convertDate(),
+          type: 'user-sql',
+          method: 'POST',
+          url: '/create-natural-person',
+        });
 
         return error.driverError;
       });
@@ -836,26 +1042,35 @@ export class ArventGroupService {
           })
           .then((response) => response)
       : 0;
-    const uuid = body.customerId ? body.customerId : uuidv4();
+    const uuid = body.customerId ?? uuidv4();
+    const bodyUser = {
+      regulatedEntity20: body.regulatedEntity20, // Adjusted to match the entity property
+      politicPerson: body.politicPerson,
+      phone: body.phone,
+      occupation: body.occupation,
+      name: body.name,
+      locality: body.locality,
+      lastname: body.lastName, // Corrected to match the entity property
+      fiscalSituation: body.fiscalSituation,
+      cuitcuil: body.cuitCuil,
+      postalCode: body.postalCode,
+      country: body.country,
+      address: body.address,
+      uuid,
+      email: body.email,
+      accountId: account ? account.id : 0,
+    };
     await this._userEntityRepository
-      .save({
-        regulatedEntity20: body.regulatedEntity20, // Adjusted to match the entity property
-        politicPerson: body.politicPerson,
-        phone: body.phone,
-        occupation: body.occupation,
-        name: body.name,
-        locality: body.locality,
-        lastname: body.lastName, // Corrected to match the entity property
-        fiscalSituation: body.fiscalSituation,
-        cuitcuil: body.cuitCuil,
-        postalCode: body.postalCode,
-        country: body.country,
-        address: body.address,
-        uuid,
-        email: body.email,
-        accountId: account ? account.id : 0,
-      })
-      .catch(() => {
+      .save(bodyUser)
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(bodyUser),
+          message: error,
+          date: this.convertDate(),
+          type: 'user-sql',
+          method: 'POST',
+          url: '/create-natural-person',
+        });
         throw 'Error al crear el usuario';
       })
       .then((result) => result);
@@ -878,6 +1093,9 @@ export class ArventGroupService {
 
     if (this.validarNumeroArgentina(body.headquartersPhone) === false)
       throw 'El campo telefono solo admite telefonos de Argentina';
+
+    if (body.cuitCDICIE.length < 11)
+      throw 'El campo cuit/cuil debe tener 11 digitos';
 
     const user = await this._userCompanyEntityRepository
       .find({
@@ -918,7 +1136,15 @@ export class ArventGroupService {
     await this._userCompanyEntityRepository
       .save(userCompany)
       .then((result) => result)
-      .catch((error) => {
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(userCompany),
+          message: error,
+          date: this.convertDate(),
+          type: 'user-company-sql',
+          method: 'POST',
+          url: '/create-juridic-person',
+        });
         console.error('Error saving user company:', error);
         throw new Error('Error saving user company');
       });
@@ -974,7 +1200,15 @@ export class ArventGroupService {
     };
     const response = await axios(config)
       .then((response) => response.data)
-      .catch((error) => {
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(config),
+          message: error?.response?.data?.message,
+          date: this.convertDate(),
+          type: 'bind-cvu',
+          method: 'POST',
+          url: '/create-cvu-client',
+        });
         throw error?.response?.data?.message;
       });
 
@@ -991,7 +1225,16 @@ export class ArventGroupService {
         throw error;
       })
       .then((response) => response)
-      .catch((error) => error);
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(sqlClient),
+          message: error,
+          date: this.convertDate(),
+          type: 'client-sql',
+          method: 'POST',
+          url: '/create-cvu-client',
+        });
+      });
 
     await this._balanceEntityRepository
       .save({
@@ -1000,7 +1243,20 @@ export class ArventGroupService {
         accountId: 0,
       })
       .then((response) => response)
-      .catch((error) => error);
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({
+            cvu: response.cvu,
+            amount: 0,
+            accountId: 0,
+          }),
+          message: error,
+          date: this.convertDate(),
+          type: 'balance-sql',
+          method: 'POST',
+          url: '/create-cvu-client',
+        });
+      });
 
     return response;
   }
@@ -1036,7 +1292,15 @@ export class ArventGroupService {
     };
     const response = await axios(config)
       .then((response) => response.data)
-      .catch((error) => {
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(config),
+          message: error?.response?.data?.message,
+          date: this.convertDate(),
+          type: 'bind-cvu',
+          method: 'POST',
+          url: '/create-cvu-client-bind',
+        });
         throw error?.response?.data?.message;
       });
 
@@ -1053,7 +1317,16 @@ export class ArventGroupService {
         throw error;
       })
       .then((response) => response)
-      .catch((error) => error);
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(sqlClient),
+          message: error,
+          date: this.convertDate(),
+          type: 'client-sql',
+          method: 'POST',
+          url: '/create-cvu-client-bind',
+        });
+      });
 
     await this._balanceEntityRepository
       .save({
@@ -1062,7 +1335,20 @@ export class ArventGroupService {
         accountId: account ? account.id : 0,
       })
       .then((response) => response)
-      .catch((error) => error);
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({
+            cvu: response.cvu,
+            amount: 0,
+            accountId: 0,
+          }),
+          message: error,
+          date: this.convertDate(),
+          type: 'balance-sql',
+          method: 'POST',
+          url: '/create-cvu-client-bind',
+        });
+      });
 
     return response;
   }
@@ -1190,7 +1476,15 @@ export class ArventGroupService {
     };
     const response = await axios(config)
       .then((response) => response.data)
-      .catch((error) => {
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(config),
+          message: error?.response?.data?.message,
+          date: this.convertDate(),
+          type: 'bind-change-alias',
+          method: 'POST',
+          url: '/change-alias-bind',
+        });
         throw error?.response?.data?.message;
       });
 
@@ -1241,9 +1535,10 @@ export class ArventGroupService {
       .includes(data);
   }
 
-  private validarNumeroArgentina(number) {
-    // Expresión regular para validar un número de teléfono argentino con solo números
-    const regexTelefonoArgentinoNumeros = /^(?:\+?54)?\d{10}$/;
+  private validarNumeroArgentina(number: string) {
+    // Expresión regular para validar un número de teléfono argentino con o sin el "9" después del código de país
+    // Formatos válidos: +549XXXXXXXXXX, +54XXXXXXXXXX, 549XXXXXXXXXX, 54XXXXXXXXXX, 9XXXXXXXXXX, XXXXXXXXXX
+    const regexTelefonoArgentinoNumeros = /^(?:\+?54)?9?\d{10}$/;
 
     // Verificar si el número coincide con la expresión regular
     return regexTelefonoArgentinoNumeros.test(number);
@@ -1298,7 +1593,15 @@ export class ArventGroupService {
     };
     return await axios(config)
       .then((response) => response.data)
-      .catch((error) => {
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(config),
+          message: error?.response?.data?.message,
+          date: this.convertDate(),
+          type: 'bind-change-name',
+          method: 'POST',
+          url: '/change-name-bind',
+        });
         throw error?.response?.data?.message;
       });
   }
@@ -1309,8 +1612,15 @@ export class ArventGroupService {
         where: { email },
       })
       .then((response) => response)
-      .catch((error) => {
-        console.log('Error fetching emails', error);
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({ email }),
+          message: error,
+          date: this.convertDate(),
+          type: 'account-sql',
+          method: 'POST',
+          url: '',
+        });
 
         throw new Error('Error fetching emails');
       });
@@ -1329,9 +1639,16 @@ export class ArventGroupService {
     return await this._accountEntityRepository
       .save(data)
       .then((response) => response)
-      .catch((error) => {
-        console.error('Database error:', error);
-        throw new Error('Error creating virtual account');
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(data),
+          message: error,
+          date: this.convertDate(),
+          type: 'account-sql',
+          method: 'POST',
+          url: '/virtual-account',
+        });
+        throw error;
       });
   }
 }

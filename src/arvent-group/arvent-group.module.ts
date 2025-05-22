@@ -12,10 +12,11 @@ import { Balance } from './entities/balance.entity';
 import { Webhook } from './entities/webhook.entity';
 import { FileEntity } from './entities/files.entity';
 import { ClientEntity } from './entities/clients.entity';
+import { LogsEntity } from './entities/logs.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Account, User, UserCompany, Transaction, Payment, Balance, Webhook, FileEntity, ClientEntity]), // Conexión para arventGroupEntityManager
+    TypeOrmModule.forFeature([Account, User, UserCompany, Transaction, Payment, Balance, Webhook, FileEntity, ClientEntity, LogsEntity]), // Conexión para arventGroupEntityManager
     TypeOrmModule.forFeature([], 'chronos'),
     ScheduleModule.forRoot(),
   ],
