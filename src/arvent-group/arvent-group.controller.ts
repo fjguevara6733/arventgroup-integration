@@ -587,4 +587,32 @@ export class ArventGroupController {
         res.status(HttpStatus.BAD_REQUEST).send(response);
       });
   }
+
+  @Post('transactions/:id')
+  @ApiHeader({ name: 'api-key', required: true })
+  async getTransactionById(
+    @Res() res: Response,
+    @Param('id') id: string,
+  ) {
+    await this.arventGroupService
+      .getTransactionById(id)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'transactions',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error transactions',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
 }

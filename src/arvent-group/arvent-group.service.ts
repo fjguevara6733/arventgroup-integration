@@ -1651,4 +1651,32 @@ export class ArventGroupService {
         throw error;
       });
   }
+
+  async getTransactionById(id: string) {
+    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/TRANSFER/${id}`;
+    const tokenExist = await this.getToken();
+    const headers = {
+      Authorization: `JWT ${tokenExist}`,
+    };
+
+    const config: AxiosRequestConfig = {
+      method: 'GET',
+      url,
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
+    return await axios(config)
+      .then((response) => response.data)
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(config),
+          message: error?.response?.data?.message,
+          date: this.convertDate(),
+          type: 'bind-change-name',
+          method: 'POST',
+          url: '/change-name-bind',
+        });
+        throw error?.response?.data?.message;
+      });
+  }
 }
