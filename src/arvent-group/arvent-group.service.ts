@@ -1255,7 +1255,7 @@ export class ArventGroupService {
         })
       : 0;
     const uuid = uuidv4().replace(/-/g, '').substring(0, 10); // Genera un UUID y elimina los guiones
-    const numericUUID = parseInt(uuid, 12);
+    const numericUUID = Number(uuid);
     const data: Client = {
       client_id: Number(numericUUID),
       currency: 'ARS',
