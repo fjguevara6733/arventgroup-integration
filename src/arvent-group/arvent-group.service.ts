@@ -1279,8 +1279,12 @@ export class ArventGroupService {
       httpsAgent: this.httpsAgent,
     };
     await this._logsEntityRepository.save({
-      request: JSON.stringify(config),
-      message: '',
+      request: JSON.stringify({
+        method: 'POST',
+        url,
+        data,
+      }),
+      message: 'request to create CVU client bind',
       date: this.convertDate(),
       type: 'bind-cvu',
       method: 'POST',
@@ -1301,7 +1305,7 @@ export class ArventGroupService {
       });
     await this._logsEntityRepository.save({
       request: JSON.stringify(response),
-      message: '',
+      message: 'response from create CVU client bind',
       date: this.convertDate(),
       type: 'bind-cvu',
       method: 'POST',
