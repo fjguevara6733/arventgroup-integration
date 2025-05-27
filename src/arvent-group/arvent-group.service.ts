@@ -1302,7 +1302,7 @@ export class ArventGroupService {
           type: 'bind-cvu',
           method: 'POST',
           url: '/create-cvu-client-bind',
-          error: JSON.stringify(error?.response?.data?.message),
+          error: JSON.stringify(error?.response?.data),
         });
         throw error?.response?.data?.message;
       });
