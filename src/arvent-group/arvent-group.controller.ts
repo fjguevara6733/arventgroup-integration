@@ -164,7 +164,7 @@ export class ArventGroupController {
   @Get('balances/:email')
   async stateBalance(@Param('email') email: string, @Res() res: Response) {
     await this.arventGroupService
-      .stateBalance({email}, true)
+      .stateBalance({ email }, true)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
@@ -590,10 +590,7 @@ export class ArventGroupController {
 
   @Get('get-transaction-by/:id')
   @ApiHeader({ name: 'api-key', required: true })
-  async getTransactionById(
-    @Res() res: Response,
-    @Param('id') id: string,
-  ) {
+  async getTransactionById(@Res() res: Response, @Param('id') id: string) {
     await this.arventGroupService
       .getTransactionById(id)
       .then((result) => {
@@ -610,6 +607,30 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error transactions',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Get('get-data-cvu/:cvu')
+  @ApiHeader({ name: 'api-key', required: true })
+  async getAccount(@Res() res: Response, @Param('cvu') cvu) {
+    await this.arventGroupService
+      .getAccount(cvu)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'get-data-cvu',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error get-data-cvu',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);
