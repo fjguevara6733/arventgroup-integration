@@ -1290,6 +1290,14 @@ export class ArventGroupService {
       headers,
       httpsAgent: this.httpsAgent,
     };
+    await this._logsEntityRepository.save({
+      request: JSON.stringify(config),
+      message: '',
+      date: this.convertDate(),
+      type: 'bind-cvu',
+      method: 'POST',
+      url: '/create-cvu-client-bind',
+    });
     const response = await axios(config)
       .then((response) => response.data)
       .catch(async (error) => {
@@ -1303,7 +1311,14 @@ export class ArventGroupService {
         });
         throw error?.response?.data?.message;
       });
-
+    await this._logsEntityRepository.save({
+      request: JSON.stringify(response),
+      message: '',
+      date: this.convertDate(),
+      type: 'bind-cvu',
+      method: 'POST',
+      url: '/create-cvu-client-bind',
+    });
     const sqlClient = await this._clientEntityRepository.create({
       clientId: String(data.client_id),
       cuit: data.cuit,
