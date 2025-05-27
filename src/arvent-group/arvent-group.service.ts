@@ -40,26 +40,14 @@ import { LogsEntity } from './entities/logs.entity';
 
 @Injectable()
 export class ArventGroupService {
-  private urlBind =
-    process.env.environment === 'dev'
-      ? process.env.URL_BIND
-      : process.env.URL_BIND_PROD;
+  private urlBind = process.env.URL_BIND;
   private httpsAgent: https.Agent;
   private token: string;
   private timeTokenExpirate: Date;
-  private USERNAME_BIND =
-    process.env.environment === 'dev'
-      ? process.env.USERNAME_BIND
-      : process.env.USERNAME_BIND_PROD;
-  private PASSWORD_BIND =
-    process.env.environment === 'dev'
-      ? process.env.PASSWORD_BIND
-      : process.env.PASSWORD_BIND_PROD;
+  private USERNAME_BIND = process.env.USERNAME_BIND;
+  private PASSWORD_BIND = process.env.PASSWORD_BIND;
   private idBank = process.env.BANK_ID_BIND;
-  private accountId =
-    process.env.environment === 'dev'
-      ? process.env.ACCOUNT_ID_BIND
-      : process.env.ACCOUNT_ID_BIND_PROD;
+  private accountId = process.env.ACCOUNT_ID_BIND;
   private idView = process.env.VIEW_ID_BIND;
   private clientCertificate = process.env.CLIENT_CERTIFICATE;
   private clientKey = process.env.CLIENT_KEY;
