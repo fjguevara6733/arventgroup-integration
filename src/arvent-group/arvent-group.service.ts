@@ -251,8 +251,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify({ accountId: emails.id }),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'client-sql',
           method: 'POST',
           url: '/send-transaction',
@@ -307,8 +307,8 @@ export class ArventGroupService {
         console.log(error.response.data);
         await this._logsEntityRepository.save({
           request: JSON.stringify(config),
-          message: error?.response?.data?.message,
-          date: this.convertDate(),
+          error: error?.response?.data?.message,
+          createdAt: this.convertDate(),
           type: 'bind-transfer',
           method: 'POST',
           url: '/send-transaction',
@@ -336,8 +336,8 @@ export class ArventGroupService {
             email: body.email,
             dateTransaction: this.convertDate(),
           }),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'transaction-sql',
           method: 'POST',
           url: '/send-transaction',
@@ -363,8 +363,8 @@ export class ArventGroupService {
             email: body.email,
             dateTransaction: this.convertDate(),
           }),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'payment-sql',
           method: 'POST',
           url: '/send-transaction',
@@ -388,8 +388,8 @@ export class ArventGroupService {
           request: JSON.stringify({
             amount: newBalance,
           }),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'balance-sql',
           method: 'POST',
           url: '/send-transaction',
@@ -428,8 +428,8 @@ export class ArventGroupService {
             email: emails.email,
             type: typeTransaction,
           }),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'transaction-sql',
           method: 'POST',
           url: '/transactions-report',
@@ -475,8 +475,8 @@ export class ArventGroupService {
       const responseAxios = await axios(config).catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(config),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'bind-get-transaction',
           method: 'POST',
           url: '/transactions-update',
@@ -497,8 +497,8 @@ export class ArventGroupService {
               status: dataResponse.status,
               response: JSON.stringify(dataResponse),
             }),
-            message: error,
-            date: this.convertDate(),
+            error: error,
+            createdAt: this.convertDate(),
             type: 'payment-sql',
             method: 'UPDATE',
             url: '/transactions-update',
@@ -529,8 +529,8 @@ export class ArventGroupService {
                 .replace('Z', ''),
               type: 'debit',
             }),
-            message: error,
-            date: this.convertDate(),
+            error: error,
+            createdAt: this.convertDate(),
             type: 'transaction-sql',
             method: 'POST',
             url: '/transactions-update',
@@ -674,8 +674,8 @@ export class ArventGroupService {
           .catch(async (error) => {
             await this._logsEntityRepository.save({
               request: JSON.stringify({ amount: total }),
-              message: error,
-              date: this.convertDate(),
+              error: error,
+              createdAt: this.convertDate(),
               type: 'balance-sql',
               method: 'UPDATE',
               url: '/transactions-credit',
@@ -703,8 +703,8 @@ export class ArventGroupService {
         .catch(async (error) => {
           await this._logsEntityRepository.save({
             request: JSON.stringify({ email: where.email }),
-            message: error,
-            date: this.convertDate(),
+            error: error,
+            createdAt: this.convertDate(),
             type: 'user-sql',
             method: 'POST',
             url: '/balance',
@@ -719,8 +719,8 @@ export class ArventGroupService {
         .catch(async (error) => {
           await this._logsEntityRepository.save({
             request: JSON.stringify({ cuit: user.cuitcuil }),
-            message: error,
-            date: this.convertDate(),
+            error: error,
+            createdAt: this.convertDate(),
             type: 'client-sql',
             method: 'POST',
             url: '/balance',
@@ -739,8 +739,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(filter),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'client-sql',
           method: 'POST',
           url: '/balance',
@@ -791,8 +791,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(config),
-          message: error?.response?.data?.message,
-          date: this.convertDate(),
+          error: error?.response?.data?.message,
+          createdAt: this.convertDate(),
           type: 'bind-debin',
           method: 'POST',
           url: '/get-transaction-debin',
@@ -825,8 +825,8 @@ export class ArventGroupService {
             dateTransaction: dateClean,
             type: 'credit',
           }),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'transaction-sql',
           method: 'POST',
           url: '/get-transaction-debin',
@@ -866,7 +866,6 @@ export class ArventGroupService {
 
     if (data.length > 0) {
       const balances = await this.stateBalance({}).then((response) => response);
-      console.log('balances', balances);
 
       for (const transaction of data) {
         const responseTransaction = JSON.parse(transaction.response);
@@ -893,8 +892,8 @@ export class ArventGroupService {
           .catch(async (error) => {
             await this._logsEntityRepository.save({
               request: JSON.stringify(config),
-              message: error?.response?.data?.message,
-              date: this.convertDate(),
+              error: error?.response?.data?.message,
+              createdAt: this.convertDate(),
               type: 'bind-debin',
               method: 'GET',
               url: '/transactions-get-credit',
@@ -1011,8 +1010,8 @@ export class ArventGroupService {
             { cuitcuil: body.cuitCuil },
             { email: body.email.toLocaleLowerCase() },
           ]),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'user-sql',
           method: 'POST',
           url: '/create-natural-person',
@@ -1053,8 +1052,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(bodyUser),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'user-sql',
           method: 'POST',
           url: '/create-natural-person',
@@ -1127,8 +1126,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(userCompany),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'user-company-sql',
           method: 'POST',
           url: '/create-juridic-person',
@@ -1191,8 +1190,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(config),
-          message: error?.response?.data?.message,
-          date: this.convertDate(),
+          error: error?.response?.data?.message,
+          createdAt: this.convertDate(),
           type: 'bind-cvu',
           method: 'POST',
           url: '/create-cvu-client',
@@ -1216,8 +1215,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(sqlClient),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'client-sql',
           method: 'POST',
           url: '/create-cvu-client',
@@ -1238,8 +1237,8 @@ export class ArventGroupService {
             amount: 0,
             accountId: 0,
           }),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'balance-sql',
           method: 'POST',
           url: '/create-cvu-client',
@@ -1295,21 +1294,21 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(config),
-          message: error?.response?.data?.message,
-          date: this.convertDate(),
+          createdAt: this.convertDate(),
           type: 'bind-cvu',
           method: 'POST',
           url: '/create-cvu-client-bind',
+          error: ''
         });
         throw error?.response?.data?.message;
       });
     await this._logsEntityRepository.save({
       request: JSON.stringify(response),
-      message: 'response from create CVU client bind',
-      date: this.convertDate(),
+      createdAt: this.convertDate(),
       type: 'bind-cvu',
       method: 'POST',
       url: '/create-cvu-client-bind',
+      error: ''
     });
     const sqlClient = await this._clientEntityRepository.create({
       clientId: String(data.client_id),
@@ -1327,8 +1326,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(sqlClient),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'client-sql',
           method: 'POST',
           url: '/create-cvu-client-bind',
@@ -1349,8 +1348,8 @@ export class ArventGroupService {
             amount: 0,
             accountId: 0,
           }),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'balance-sql',
           method: 'POST',
           url: '/create-cvu-client-bind',
@@ -1486,8 +1485,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(config),
-          message: error?.response?.data?.message,
-          date: this.convertDate(),
+          error: error?.response?.data?.message,
+          createdAt: this.convertDate(),
           type: 'bind-change-alias',
           method: 'POST',
           url: '/change-alias-bind',
@@ -1603,8 +1602,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(config),
-          message: error?.response?.data?.message,
-          date: this.convertDate(),
+          error: error?.response?.data?.message,
+          createdAt: this.convertDate(),
           type: 'bind-change-name',
           method: 'POST',
           url: '/change-name-bind',
@@ -1622,8 +1621,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify({ email }),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'account-sql',
           method: 'POST',
           url: '',
@@ -1649,8 +1648,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(data),
-          message: error,
-          date: this.convertDate(),
+          error: error,
+          createdAt: this.convertDate(),
           type: 'account-sql',
           method: 'POST',
           url: '/virtual-account',
@@ -1677,8 +1676,8 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(config),
-          message: error?.response?.data?.message,
-          date: this.convertDate(),
+          error: error?.response?.data?.message,
+          createdAt: this.convertDate(),
           type: 'bind-change-name',
           method: 'POST',
           url: '/change-name-bind',
