@@ -1278,16 +1278,16 @@ export class ArventGroupService {
       httpsAgent: this.httpsAgent,
     };
     await this._logsEntityRepository.save({
+      method: 'POST',
+      url: '/create-cvu-client-bind',
+      type: 'bind-cvu',
+      error: 'request to create CVU client bind',
       request: JSON.stringify({
         method: 'POST',
         url,
         data,
       }),
-      message: 'request to create CVU client bind',
       date: this.convertDate(),
-      type: 'bind-cvu',
-      method: 'POST',
-      url: '/create-cvu-client-bind',
     });
     const response = await axios(config)
       .then((response) => response.data)
