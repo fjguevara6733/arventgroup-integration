@@ -1293,22 +1293,30 @@ export class ArventGroupService {
       .then((response) => response.data)
       .catch(async (error) => {
         await this._logsEntityRepository.save({
-          request: JSON.stringify(config),
+          request: JSON.stringify({
+            method: 'POST',
+            url,
+            data,
+          }),
           createdAt: this.convertDate(),
           type: 'bind-cvu',
           method: 'POST',
           url: '/create-cvu-client-bind',
-          error: ''
+          error: JSON.stringify(error?.response?.data?.message),
         });
         throw error?.response?.data?.message;
       });
     await this._logsEntityRepository.save({
-      request: JSON.stringify(response),
+      request: JSON.stringify({
+        method: 'POST',
+        url,
+        data,
+      }),
       createdAt: this.convertDate(),
       type: 'bind-cvu',
       method: 'POST',
       url: '/create-cvu-client-bind',
-      error: ''
+      error: JSON.stringify(response),
     });
     const sqlClient = await this._clientEntityRepository.create({
       clientId: String(data.client_id),
