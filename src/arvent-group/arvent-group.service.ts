@@ -1038,6 +1038,7 @@ export class ArventGroupService {
     const account = key
       ? await this._accountEntityRepository
           .findOne({
+            select: { id: true, key: true },
             where: { key },
           })
           .then((response) => response)
