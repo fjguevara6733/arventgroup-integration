@@ -1268,8 +1268,9 @@ export class ArventGroupService {
           where: { key },
         })
       : 0;
-    const uuid = uuidv4().replace(/-/g, '').substring(0, 10); // Genera un UUID y elimina los guiones
-    const numericUUID = parseInt(uuid);
+    // Genera un UUID de 20 dígitos numéricos aleatorios
+    const uuid = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
+    const numericUUID = uuid;
     const data: Client = {
       client_id: Number(numericUUID),
       currency: 'ARS',
