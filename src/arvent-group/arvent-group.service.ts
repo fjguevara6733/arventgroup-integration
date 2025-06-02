@@ -728,7 +728,7 @@ export class ArventGroupService {
       if (user) {
         const client = await this._clientEntityRepository
           .findOne({
-            where: { cuit: user.cuitcuil },
+            where: { cuit: user.cuitcuil, accountId: user.accountId },
           })
           .catch(async (error) => {
             await this._logsEntityRepository.save({
