@@ -250,10 +250,13 @@ export class ArventGroupService {
       })
       .then((response) => response);
     console.log('user', user);
+    const whereClient = {};
+    if (emails) Object.assign(whereClient, { accountId: emails.id });
 
+    if (user) Object.assign(whereClient, { cuit: String(user.cuitcuil) });
     const dataClient = await this._clientEntityRepository
       .findOne({
-        where: { accountId: emails.id, cuit: user.cuitcuil },
+        where: whereClient,
       })
       .then((response) => response)
       .catch(async (error) => {
@@ -748,7 +751,7 @@ export class ArventGroupService {
       }
     }
     console.log('filter', filter);
-    
+
     return await this._balanceEntityRepository
       .find({
         where: filter,
@@ -1647,7 +1650,7 @@ export class ArventGroupService {
           email: true,
           id: true,
         },
-        where: { email, key },
+        where: [{ email }, { key }],
       })
       .then((response) => response)
       .catch(async (error) => {
