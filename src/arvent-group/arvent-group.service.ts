@@ -74,12 +74,12 @@ export class ArventGroupService {
     },
     {
       email: 'chronospay@integraciones.com',
-      id: 1,
+      id: 19,
       cvu: '0000058105193400884642',
     },
     {
       email: 'pablo@payexsrl.com',
-      id: 1,
+      id: 11,
       cvu: '0000058104351016263797',
     },
   ];
@@ -242,7 +242,8 @@ export class ArventGroupService {
 
     const emails = await this.getEmail(email);
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
-
+    console.log(emails);
+    
     const dataClient = await this._clientEntityRepository
       .findOne({
         where: { accountId: emails.id },
@@ -1638,6 +1639,7 @@ export class ArventGroupService {
       .findOne({
         select: {
           email: true,
+          id: true,
         },
         where: { email },
       })
