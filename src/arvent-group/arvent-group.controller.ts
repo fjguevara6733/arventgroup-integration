@@ -79,10 +79,14 @@ export class ArventGroupController {
 
   @Post('send-transaction')
   @ApiHeader({ name: 'api-key', required: true })
-  async sendTransaction(@Body() payload: DoRequestDto, @Res() res: Response) {
+  async sendTransaction(
+    @Body() payload: DoRequestDto,
+    @Res() res: Response,
+    @Headers('key') key: string
+  ) {
     console.log("@Post('send-transaction')");
     await this.arventGroupService
-      .doTransaction(payload)
+      .doTransaction(payload, key)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
@@ -164,7 +168,7 @@ export class ArventGroupController {
   @Get('balances/:email')
   async stateBalance(@Param('email') email: string, @Res() res: Response) {
     await this.arventGroupService
-      .stateBalance({email}, true)
+      .stateBalance({ email }, true)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,

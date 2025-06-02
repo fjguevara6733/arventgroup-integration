@@ -237,16 +237,23 @@ export class ArventGroupService {
    * @param body
    * @returns
    */
-  async doTransaction(body: DoRequestDto) {
+  async doTransaction(body: DoRequestDto, key: string = '') {
     const { destinationCbu, amount, email } = body;
 
-    const emails = await this.getEmail(email);
+    const emails = await this.getEmail(email, key);
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
-    console.log(emails);
-    
+    console.log('emails', emails);
+
+    const user = await this._userEntityRepository
+      .findOne({
+        where: { email: body.email },
+      })
+      .then((response) => response);
+    console.log('user', user);
+
     const dataClient = await this._clientEntityRepository
       .findOne({
-        where: { accountId: emails.id },
+        where: { accountId: emails.id, cuit: user.cuitcuil },
       })
       .then((response) => response)
       .catch(async (error) => {
@@ -267,12 +274,6 @@ export class ArventGroupService {
     );
 
     if (Number(balances.amount) < Number(amount)) throw 'Fondos insuficientes';
-    const user = await this._userEntityRepository
-      .findOne({
-        where: { email: emails.email },
-      })
-      .then((response) => response);
-    console.log('user', user);
 
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
@@ -746,6 +747,8 @@ export class ArventGroupService {
         filter = { cvu: cvu };
       }
     }
+    console.log('filter', filter);
+    
     return await this._balanceEntityRepository
       .find({
         where: filter,
@@ -1269,7 +1272,9 @@ export class ArventGroupService {
         })
       : 0;
     // Genera un UUID de 20 dígitos numéricos aleatorios
-    const uuid = Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
+    const uuid = Array.from({ length: 12 }, () =>
+      Math.floor(Math.random() * 10),
+    ).join('');
     const numericUUID = uuid;
     const data: Client = {
       client_id: Number(numericUUID),
@@ -1635,19 +1640,19 @@ export class ArventGroupService {
       });
   }
 
-  async getEmail(email: string) {
+  async getEmail(email: string, key: string = '') {
     return await this._accountEntityRepository
       .findOne({
         select: {
           email: true,
           id: true,
         },
-        where: { email },
+        where: { email, key },
       })
       .then((response) => response)
       .catch(async (error) => {
         await this._logsEntityRepository.save({
-          request: JSON.stringify({ email }),
+          request: JSON.stringify({ email, key }),
           error: error,
           createdAt: this.convertDate(),
           type: 'account-sql',
