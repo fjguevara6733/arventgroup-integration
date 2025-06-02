@@ -1223,9 +1223,6 @@ export class ArventGroupService {
     });
     await this._clientEntityRepository
       .save(sqlClient)
-      .catch((error) => {
-        throw error;
-      })
       .then((response) => response)
       .catch(async (error) => {
         await this._logsEntityRepository.save({
@@ -1266,6 +1263,7 @@ export class ArventGroupService {
   async createCvuBind(body: createClientCvuBind, key: string) {
     const account = key
       ? await this._accountEntityRepository.findOne({
+          select: { id: true, key: true },
           where: { key },
         })
       : 0;
