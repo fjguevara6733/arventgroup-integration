@@ -242,14 +242,12 @@ export class ArventGroupService {
 
     const emails = await this.getEmail(email, key);
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
-    console.log('emails', emails);
 
     const user = await this._userEntityRepository
       .findOne({
         where: { email: body.email },
       })
       .then((response) => response);
-    console.log('user', user);
     const whereClient = {};
     if (emails) Object.assign(whereClient, { accountId: emails.id });
 
@@ -270,7 +268,6 @@ export class ArventGroupService {
         });
         throw error;
       });
-    console.log('dataClient', dataClient);
 
     const balances = await this.stateBalance({ cvu: dataClient.cvu }).then(
       (response) => response[0],
@@ -281,6 +278,15 @@ export class ArventGroupService {
       Number(balances.amount) <= 0
     )
       throw 'Fondos insuficientes';
+
+    await this._logsEntityRepository.save({
+      request: JSON.stringify(balances),
+      error: 'balance',
+      createdAt: this.convertDate(),
+      type: 'balance-sql',
+      method: 'POST',
+      url: '/send-transaction',
+    });
 
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
@@ -310,6 +316,19 @@ export class ArventGroupService {
       headers,
       httpsAgent: this.httpsAgent,
     };
+
+    await this._logsEntityRepository.save({
+      request: JSON.stringify({
+        method: 'POST',
+        url,
+        data: params,
+      }),
+      error: '',
+      createdAt: this.convertDate(),
+      type: 'body-transaction',
+      method: 'POST',
+      url: '/send-transaction',
+    });
 
     const response = await axios(config)
       .then((response) => response)
@@ -389,7 +408,7 @@ export class ArventGroupService {
           id: balances.id,
         },
         {
-          amount: newBalance,
+          amount: newBalance < 0 ? 0 : newBalance,
         },
       )
       .then((response) => response)
@@ -577,32 +596,10 @@ export class ArventGroupService {
           });
           return error;
         });
-      const response = JSON.parse(transaction.response);
-      await this.updateBalanceAfterTransaction(
-        transaction.email,
-        response.charge.value.amount,
-      );
     }
     return true;
   }
 
-  async updateBalanceAfterTransaction(email: string, amount: number) {
-    const user = await this._userEntityRepository.findOne({
-      where: { email },
-    });
-
-    const client = await this._clientEntityRepository.findOne({
-      where: { cuit: user.cuitcuil, accountId: user.accountId },
-    });
-
-    const balance = await this._balanceEntityRepository.findOne({
-      where: { cvu: client.cvu, accountId: user.accountId },
-    });
-    const newBalance = Number(balance.amount) - amount;
-    return await this._balanceEntityRepository.update(balance.id, {
-      amount: newBalance,
-    });
-  }
   //tentiva de su uso completo
   async creditTransactions() {
     const accountCredits = [];
@@ -733,7 +730,7 @@ export class ArventGroupService {
       if (dataBalance) {
         const total = Number(dataBalance.amount) + account.amount;
         await this._balanceEntityRepository
-          .update(dataBalance.id, { amount: total })
+          .update(dataBalance.id, { amount: total < 0 ? 0 : total })
           .catch(async (error) => {
             await this._logsEntityRepository.save({
               request: JSON.stringify({ amount: total }),
