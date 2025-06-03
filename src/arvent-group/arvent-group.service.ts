@@ -475,11 +475,9 @@ export class ArventGroupService {
 
     if (data.length === 0) return false;
     for (const transaction of data) {
-      const response = JSON.parse(transaction.response);
-      const { transaction_ids } = response;
       const config: AxiosRequestConfig = {
         method: 'GET',
-        url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction_ids[0]}`,
+        url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
         httpsAgent: this.httpsAgent,
       };
       const responseAxios = await axios(config).catch(async (error) => {
@@ -494,13 +492,16 @@ export class ArventGroupService {
         return error;
       });
       await this._logsEntityRepository.save({
-          request: JSON.stringify(config),
-          error: JSON.stringify(responseAxios),
-          createdAt: this.convertDate(),
-          type: 'bind-get-transaction',
-          method: 'POST',
-          url: '/transactions-update',
-        });
+        request: JSON.stringify({
+          method: 'GET',
+          url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
+        }),
+        error: JSON.stringify(responseAxios),
+        createdAt: this.convertDate(),
+        type: 'bind-get-transaction',
+        method: 'POST',
+        url: '/transactions-update',
+      });
       const data = responseAxios.data?.data || responseAxios.data;
       const dataResponse = data;
       await this._paymentEntityRepository
@@ -555,10 +556,29 @@ export class ArventGroupService {
           });
           return error;
         });
+        const response = JSON.parse(transaction.response)
+      await this.updateBalanceAfterTransaction(transaction.email, response.charge.value.amount);
     }
     return true;
   }
 
+  async updateBalanceAfterTransaction(email: string, amount: number) {
+    const user = await this._userEntityRepository.findOne({
+      where: { email },
+    });
+
+    const client = await this._clientEntityRepository.findOne({
+      where: { cuit: user.cuitcuil },
+    });
+
+    const balance = await this._balanceEntityRepository.findOne({
+      where: { cvu: client.cvu },
+    });
+    const newBalance = Number(balance) - amount;
+    return await this._balanceEntityRepository.update(balance.id, {
+      amount: newBalance,
+    });
+  }
   //tentiva de su uso completo
   async creditTransactions() {
     const accountCredits = [];
@@ -874,7 +894,7 @@ export class ArventGroupService {
     let newBalance = 0;
     const data = await this._transactionEntityRepository.find({
       where: {
-        status: In(['PENDING', 'AWAITING_CONFIRMATION']),
+        status: In(['PENDING', 'AWAITING_CONFIRMATION', 'IN_PROGRESS']),
         type: 'credit',
         idTransaction: Not(
           In(
