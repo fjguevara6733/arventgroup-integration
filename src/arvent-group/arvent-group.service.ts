@@ -588,13 +588,13 @@ export class ArventGroupService {
     });
 
     const client = await this._clientEntityRepository.findOne({
-      where: { cuit: user.cuitcuil },
+      where: { cuit: user.cuitcuil, accountId: user.accountId },
     });
 
     const balance = await this._balanceEntityRepository.findOne({
-      where: { cvu: client.cvu },
+      where: { cvu: client.cvu, accountId: user.accountId },
     });
-    const newBalance = Number(balance) - amount;
+    const newBalance = Number(balance.amount) - amount;
     return await this._balanceEntityRepository.update(balance.id, {
       amount: newBalance,
     });
