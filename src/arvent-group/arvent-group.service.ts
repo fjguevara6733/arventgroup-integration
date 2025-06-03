@@ -525,7 +525,7 @@ export class ArventGroupService {
           return error;
         });
       await this._transactionEntityRepository
-        .update(transaction.id, {
+        .update({idTransaction: transaction.idTransaction}, {
           idTransaction: transaction.idTransaction,
           status: dataResponse.status,
           response: JSON.stringify(dataResponse),
