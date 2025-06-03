@@ -525,16 +525,19 @@ export class ArventGroupService {
           return error;
         });
       await this._transactionEntityRepository
-        .update({idTransaction: transaction.idTransaction}, {
-          idTransaction: transaction.idTransaction,
-          status: dataResponse.status,
-          response: JSON.stringify(dataResponse),
-          email: transaction.email,
-          datetransaction: dataResponse.business_date
-            .replace('T', ' ')
-            .replace('Z', ''),
-          type: 'debit',
-        })
+        .update(
+          { idTransaction: transaction.idTransaction },
+          {
+            idTransaction: transaction.idTransaction,
+            status: dataResponse.status,
+            response: JSON.stringify(dataResponse),
+            email: transaction.email,
+            datetransaction: dataResponse.business_date
+              .replace('T', ' ')
+              .replace('Z', ''),
+            type: 'debit',
+          },
+        )
         .then((response) => response)
         .catch(async (error) => {
           await this._logsEntityRepository.save({
@@ -556,8 +559,11 @@ export class ArventGroupService {
           });
           return error;
         });
-        const response = JSON.parse(transaction.response)
-      await this.updateBalanceAfterTransaction(transaction.email, response.charge.value.amount);
+      const response = JSON.parse(transaction.response);
+      await this.updateBalanceAfterTransaction(
+        transaction.email,
+        response.charge.value.amount,
+      );
     }
     return true;
   }
