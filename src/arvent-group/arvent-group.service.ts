@@ -278,7 +278,7 @@ export class ArventGroupService {
 
     if (
       Number(amount) > Number(balances.amount) ||
-      Number(balances.amount) == 0
+      Number(balances.amount) <= 0
     )
       throw 'Fondos insuficientes';
 
@@ -726,7 +726,7 @@ export class ArventGroupService {
   }
 
   private async updateBalances(accountCredits) {
-    const balances = await this.stateBalance('');
+    const balances = await this.stateBalance({});
 
     for (const account of accountCredits) {
       const dataBalance = balances.find((e) => e.cvu === account.cvu);
@@ -757,7 +757,7 @@ export class ArventGroupService {
    * @returns
    */
   async stateBalance(where: any, isCalled = false) {
-    let filter = {};
+    let filter = where ? { ...where } : {};
     if (isCalled) {
       const user = await this._userEntityRepository
         .findOne({
