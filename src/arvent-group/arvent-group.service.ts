@@ -276,7 +276,11 @@ export class ArventGroupService {
       (response) => response[0],
     );
 
-    if (Number(balances.amount) < Number(amount)) throw 'Fondos insuficientes';
+    if (
+      Number(amount) > Number(balances.amount) ||
+      Number(balances.amount) == 0
+    )
+      throw 'Fondos insuficientes';
 
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
