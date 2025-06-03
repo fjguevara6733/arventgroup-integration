@@ -482,7 +482,10 @@ export class ArventGroupService {
       };
       const responseAxios = await axios(config).catch(async (error) => {
         await this._logsEntityRepository.save({
-          request: JSON.stringify(config),
+          request: JSON.stringify({
+            method: config.method,
+            url: config.url,
+          }),
           error: error,
           createdAt: this.convertDate(),
           type: 'bind-get-transaction',
