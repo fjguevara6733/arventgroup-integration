@@ -493,8 +493,16 @@ export class ArventGroupService {
         });
         return error;
       });
-      const data = responseAxios.data;
-      const dataResponse = data.data;
+      await this._logsEntityRepository.save({
+          request: JSON.stringify(config),
+          error: JSON.stringify(responseAxios),
+          createdAt: this.convertDate(),
+          type: 'bind-get-transaction',
+          method: 'POST',
+          url: '/transactions-update',
+        });
+      const data = responseAxios.data?.data || responseAxios.data;
+      const dataResponse = data;
       await this._paymentEntityRepository
         .update(transaction.id, {
           status: dataResponse.status,
