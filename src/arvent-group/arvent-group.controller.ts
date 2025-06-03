@@ -133,10 +133,9 @@ export class ArventGroupController {
       });
   }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_MINUTE)
   @Get('transactions-update')
   async updateStatusTransactions() {
-    console.log('Cron transactions-update');
     try {
       return {
         statusCode: HttpStatus.ACCEPTED,
@@ -151,7 +150,6 @@ export class ArventGroupController {
   @Cron('*/15 * * * *')
   @Post('transactions-credit')
   async creditTransactions() {
-    console.log('Cron transactions-credit');
     try {
       return {
         statusCode: HttpStatus.ACCEPTED,
@@ -218,7 +216,6 @@ export class ArventGroupController {
   @Cron(CronExpression.EVERY_10_MINUTES)
   @Get('transactions-get-credits')
   async updateStatusTransactionsCredit() {
-    console.log('Cron transactions-get-credits');
     try {
       return {
         statusCode: HttpStatus.ACCEPTED,

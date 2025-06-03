@@ -605,7 +605,6 @@ export class ArventGroupService {
     const webhooks = await this._webhookEntityRepository.find({
       where: { status: 'active' },
     });
-    console.log('webhooks', webhooks);
 
     const transactions = webhooks.map((webhook) => {
       const dataJson = JSON.parse(webhook.response);
@@ -620,7 +619,6 @@ export class ArventGroupService {
         date: webhook.date,
       };
     });
-    console.log('transactions', transactions);
 
     for (const transaction of transactions) {
       const { type } = transaction;
@@ -932,81 +930,78 @@ export class ArventGroupService {
       },
     });
 
-    if (data.length > 0) {
-      const balances = await this.stateBalance({}).then((response) => response);
-      console.log('balances', balances);
+    if (data.length === 0) return false;
 
-      for (const transaction of data) {
-        const responseTransaction = JSON.parse(transaction.response);
-        const { transaction_ids } = responseTransaction;
-        const emails = this.datos.find(
-          (e) =>
-            e.email.toLocaleLowerCase() ===
-            transaction.email.toLocaleLowerCase(),
-        );
-        const balanceAccount = balances.find((e) => e.cvu === emails.cvu);
-        const headers = {
-          Authorization: `JWT ${await this.getToken()}`,
-        };
-        const url: string = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/DEBIN/${transaction_ids[0]}`;
-        const config: AxiosRequestConfig = {
-          method: 'GET',
-          url,
-          headers,
-          httpsAgent: this.httpsAgent,
-        };
+    const balances = await this.stateBalance({}).then((response) => response);
 
-        const response = await axios(config)
-          .then((response) => response.data)
-          .catch(async (error) => {
-            await this._logsEntityRepository.save({
-              request: JSON.stringify(config),
-              error: error?.response?.data?.message,
-              createdAt: this.convertDate(),
-              type: 'bind-debin',
-              method: 'GET',
-              url: '/transactions-get-credit',
-            });
-            throw error?.response?.data?.message;
+    for (const transaction of data) {
+      const responseTransaction = JSON.parse(transaction.response);
+      const { transaction_ids } = responseTransaction;
+      const emails = this.datos.find(
+        (e) =>
+          e.email.toLocaleLowerCase() === transaction.email.toLocaleLowerCase(),
+      );
+      const balanceAccount = balances.find((e) => e.cvu === emails.cvu);
+      const headers = {
+        Authorization: `JWT ${await this.getToken()}`,
+      };
+      const url: string = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/DEBIN/${transaction_ids[0]}`;
+      const config: AxiosRequestConfig = {
+        method: 'GET',
+        url,
+        headers,
+        httpsAgent: this.httpsAgent,
+      };
+
+      const response = await axios(config)
+        .then((response) => response.data)
+        .catch(async (error) => {
+          await this._logsEntityRepository.save({
+            request: JSON.stringify(config),
+            error: error?.response?.data?.message,
+            createdAt: this.convertDate(),
+            type: 'bind-debin',
+            method: 'GET',
+            url: '/transactions-get-credit',
           });
-        const existingTransaction =
-          await this._transactionEntityRepository.find({
-            where: {
-              idTransaction: transaction.idTransaction,
-              status: response.status,
+          throw error?.response?.data?.message;
+        });
+      const existingTransaction = await this._transactionEntityRepository.find({
+        where: {
+          idTransaction: transaction.idTransaction,
+          status: response.status,
+        },
+      });
+
+      if (existingTransaction.length === 0) {
+        await this._transactionEntityRepository
+          .save({
+            idTransaction: transaction.idTransaction,
+            response: JSON.stringify(response),
+            status: response.status,
+            email: transaction.email,
+            datetransaction: response.start_date
+              .replace('T', ' ')
+              .replace('Z', ''),
+            type: 'credit',
+          })
+          .then((response) => response)
+          .catch((error) => error);
+
+        const { charge } = response;
+        newBalance =
+          Number(balanceAccount.amount) + Number(charge.value.amount);
+        await this._balanceEntityRepository
+          .update(
+            {
+              id: balanceAccount.id,
             },
-          });
-
-        if (existingTransaction.length === 0) {
-          await this._transactionEntityRepository
-            .save({
-              idTransaction: transaction.idTransaction,
-              response: JSON.stringify(response),
-              status: response.status,
-              email: transaction.email,
-              datetransaction: response.start_date
-                .replace('T', ' ')
-                .replace('Z', ''),
-              type: 'credit',
-            })
-            .then((response) => response)
-            .catch((error) => error);
-
-          const { charge } = response;
-          newBalance =
-            Number(balanceAccount.amount) + Number(charge.value.amount);
-          await this._balanceEntityRepository
-            .update(
-              {
-                id: balanceAccount.id,
-              },
-              {
-                amount: newBalance,
-              },
-            )
-            .then((response) => response)
-            .catch((error) => error);
-        }
+            {
+              amount: newBalance,
+            },
+          )
+          .then((response) => response)
+          .catch((error) => error);
       }
     }
 
@@ -1655,6 +1650,7 @@ export class ArventGroupService {
         date: this.convertDate(),
         status: 'active',
       });
+      await this.creditTransactions();
       return 'Webhook creado correctamente';
     }
     return 'Webhook vacio';
