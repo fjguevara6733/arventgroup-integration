@@ -480,6 +480,17 @@ export class ArventGroupService {
         url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
         httpsAgent: this.httpsAgent,
       };
+      await this._logsEntityRepository.save({
+        request: JSON.stringify({
+          method: 'GET',
+          url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
+        }),
+        error: '',
+        createdAt: this.convertDate(),
+        type: 'bind-get-transaction',
+        method: 'POST',
+        url: '/transactions-update',
+      });
       const responseAxios = await axios(config).catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify({
@@ -499,7 +510,7 @@ export class ArventGroupService {
           method: 'GET',
           url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
         }),
-        error: JSON.stringify(responseAxios),
+        error: JSON.stringify(responseAxios.data),
         createdAt: this.convertDate(),
         type: 'bind-get-transaction',
         method: 'POST',
