@@ -20,7 +20,7 @@ import {
   normalResponse,
   TypeTransactions,
 } from 'src/common/enum';
-import { EntityManager, In, Not, Repository } from 'typeorm';
+import { Between, EntityManager, In, Not, Repository } from 'typeorm';
 import * as https from 'https';
 import axios, { AxiosRequestConfig } from 'axios';
 import { readFileSync } from 'fs';
@@ -438,11 +438,11 @@ export class ArventGroupService {
    * Servicio para listar las transacciones
    * @returns
    */
-  async transactionReport(body: arventGetTransactions) {
+  async transactionReport(body: arventGetTransactions, key: string) {
     if (!this.validateEnum(TypeTransactions, body.type))
       throw 'Tipo de transacción no válida';
 
-    const emails = await this.getEmail(body.accountEmail);
+    const emails = await this.getEmail(body.accountEmail, key);
     if (emails === undefined) throw 'Email no asociado a ninguna cuenta';
 
     if (body.limit === 0) body.limit = 10;
@@ -451,15 +451,22 @@ export class ArventGroupService {
       body.type === 'all' ? In(['credit', 'debit']) : body.type;
     const data = await this._transactionEntityRepository
       .find({
-        where: { email: emails.email, type: typeTransaction },
+        where: {
+          email: body.accountEmail,
+          type: typeTransaction,
+          datetransaction: Between(body.fromDate, body.toDate), // Usar Between para el rango de fechas
+        },
         take: body.limit,
         skip: body.offset,
+        order: { datetransaction: 'DESC' },
       })
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify({
             email: emails.email,
             type: typeTransaction,
+            fromDate: body.fromDate,
+            toDate: body.toDate,
           }),
           error: error,
           createdAt: this.convertDate(),
@@ -497,6 +504,24 @@ export class ArventGroupService {
     });
 
     if (data.length === 0) return false;
+
+    const users = await this._userEntityRepository.find({
+      where: { email: In(data.map((e) => e.email)) },
+    });
+    const accounts = await this._accountEntityRepository
+      .find({
+        where: { needWebhook: true, id: In(users.map((e) => e.accountId)) },
+      })
+      .then((response) => {
+        return response.map((e) => {
+          const user = users.find((u) => u.accountId === e.id);
+          return {
+            ...e,
+            email: user.email,
+          };
+        });
+      });
+
     for (const transaction of data) {
       const config: AxiosRequestConfig = {
         method: 'GET',
@@ -596,6 +621,36 @@ export class ArventGroupService {
           });
           return error;
         });
+
+      if (accounts.length > 0) {
+        const account = accounts.find((e) => e.email === transaction.email);
+        if (!account) continue;
+
+        await axios({
+          method: 'POST',
+          url: `${process.env.URL_VIRTUAL_ACCOUNT}/virtual-account/webhook`,
+          data: {
+            email: transaction.email,
+            status: dataResponse.status,
+            idTransaction: transaction.idTransaction,
+            payload: transaction.response,
+          },
+        }).catch(async (error) => {
+          await this._logsEntityRepository.save({
+            request: JSON.stringify({
+              method: config.method,
+              url: config.url,
+            }),
+            error: error,
+            createdAt: this.convertDate(),
+            type: 'bind-get-transaction',
+            method: 'POST',
+            url: '/transactions-update',
+          });
+
+          return error;
+        });
+      }
     }
     return true;
   }
@@ -1213,7 +1268,7 @@ export class ArventGroupService {
    */
   async createClientCvu(body: createClientCvu) {
     const user = await this.validateUser(body.customerId);
-    const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
+    const cuit = user.isNatural ? user.cuitcuil : user.cuit_cdi_cie;
     const files = await this._fileEntityRepository
       .find({
         where: { cuit },
@@ -1234,9 +1289,9 @@ export class ArventGroupService {
       name: user.isNatural
         ? `${user.name} ${user.lastName}`
         : `${user.name} ${user.last_name}`,
-      cuit: user.isNatural ? user.cuitCuil : user.cuit_cdi_cie,
+      cuit,
     };
-    await this.validateClient(data.cuit);
+    await this.validateClient(data.cuit, user.accountId);
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
     const tokenExist = await this.getToken();
@@ -1329,7 +1384,7 @@ export class ArventGroupService {
       name: body.name,
       cuit: body.cuit,
     };
-    await this.validateClient(data.cuit);
+    await this.validateClient(data.cuit, account ? account.id : 0);
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
     const tokenExist = await this.getToken();
@@ -1455,7 +1510,7 @@ export class ArventGroupService {
       throw 'El docType no es asignable para un usuario natural.';
 
     const imageData = `"${file.buffer.toString('base64')}"`;
-    const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
+    const cuit = user.isNatural ? user.cuitcuil : user.cuit_cdi_cie;
     const files = await this._fileEntityRepository
       .find({ where: { cuit, typefile: body.docType } })
       .then((response) => response[0]);
@@ -1496,11 +1551,11 @@ export class ArventGroupService {
    */
   async getDataUser(customerId) {
     const user = await this.validateUser(customerId);
-    const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
+    const cuit = user.isNatural ? user.cuitcuil : user.cuit_cdi_cie;
     const files = await this._fileEntityRepository.find({
       where: { cuit },
     });
-    const dataClient = await this.validateClient(cuit, false);
+    const dataClient = await this.validateClient(cuit, user.accountId, false);
 
     const id = user.uuid;
     delete user.uuid;
@@ -1594,7 +1649,11 @@ export class ArventGroupService {
       : { isNatural: false, ...existClientJuridic };
   }
 
-  private async validateClient(cuit: string, needError = true) {
+  private async validateClient(
+    cuit: string,
+    accountId: number,
+    needError = true,
+  ) {
     const existCvu = await this._clientEntityRepository
       .findOne({
         where: { cuit: cuit },
@@ -1716,11 +1775,13 @@ export class ArventGroupService {
     email: string;
     key: string;
     secretKey: string;
+    needWebhook: boolean;
   }) {
     const data = this._accountEntityRepository.create({
       email: body.email,
       key: body.key,
       secretKey: body.secretKey,
+      needWebhook: body.needWebhook,
     });
     return await this._accountEntityRepository
       .save(data)

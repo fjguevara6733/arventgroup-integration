@@ -14,4 +14,7 @@ export class Account {
 
   @Column({ name: 'secretKey', type: 'text', nullable: true })
   secretKey: string;
+
+  @Column({ name: 'need_webhook', nullable: true, default: false })
+  needWebhook: boolean;
 }

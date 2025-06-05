@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { TypeTransactions } from '../enum';
 
 export class LoginDto {
@@ -113,6 +113,16 @@ export class arventGetTransactions {
   @IsString()
   @IsNotEmpty()
   type?: string;
+
+  @ApiProperty()
+  @IsDateString()
+  @IsNotEmpty()
+  fromDate: Date;
+
+  @ApiProperty()
+  @IsDateString()
+  @IsNotEmpty()
+  toDate: Date;
 }
 
 export class createClientCvu {

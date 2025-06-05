@@ -110,9 +110,10 @@ export class ArventGroupController {
   async transactionReport(
     @Res() res: Response,
     @Body() body: arventGetTransactions,
+  @Headers('key') key: string,
   ) {
     await this.arventGroupService
-      .transactionReport(body)
+      .transactionReport(body, key)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
