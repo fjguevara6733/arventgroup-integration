@@ -644,7 +644,7 @@ export class ArventGroupService {
             }),
             error: error,
             createdAt: this.convertDate(),
-            type: 'bind-get-transaction',
+            type: 'virtul-account-webhook',
             method: 'POST',
             url: '/transactions-update',
           });
