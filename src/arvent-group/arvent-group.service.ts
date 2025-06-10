@@ -454,8 +454,12 @@ export class ArventGroupService {
       : {
           email: body.accountEmail,
           type: typeTransaction,
-          datetransaction: Between(body.fromDate, body.toDate), // Usar Between para el rango de fechas
         };
+    if (body.fromDate && body.toDate) {
+      Object.assign(where, {
+        datetransaction: Between(body.fromDate, body.toDate),
+      });
+    }
     const data = await this._transactionEntityRepository
       .find({
         where,
