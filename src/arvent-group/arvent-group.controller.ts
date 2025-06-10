@@ -123,7 +123,7 @@ export class ArventGroupController {
         res.status(HttpStatus.ACCEPTED).send(response);
       })
       .catch((error) => {
-        console.log(error);
+        console.log('error', error);
 
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,

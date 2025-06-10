@@ -333,7 +333,7 @@ export class ArventGroupService {
     const response = await axios(config)
       .then((response) => response)
       .catch(async (error) => {
-        console.log(error.response.data);
+        console.log('error axios', error.response.data);
         await this._logsEntityRepository.save({
           request: JSON.stringify(config),
           error: JSON.stringify(error.response),
