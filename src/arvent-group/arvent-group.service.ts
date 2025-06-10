@@ -336,7 +336,7 @@ export class ArventGroupService {
         console.log(error.response.data);
         await this._logsEntityRepository.save({
           request: JSON.stringify(config),
-          error: error?.response?.data?.message,
+          error: JSON.stringify(error.response),
           createdAt: this.convertDate(),
           type: 'bind-transfer',
           method: 'POST',
@@ -344,15 +344,6 @@ export class ArventGroupService {
         });
         throw error?.response?.data?.message;
       });
-
-    await this._logsEntityRepository.save({
-      request: JSON.stringify(config),
-      error: JSON.stringify(response),
-      createdAt: this.convertDate(),
-      type: 'bind-transfer',
-      method: 'POST',
-      url: '/send-transaction',
-    });
 
     const data = response.data;
     const dataString = JSON.stringify(data);
