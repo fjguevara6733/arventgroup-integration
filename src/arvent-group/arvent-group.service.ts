@@ -716,10 +716,16 @@ export class ArventGroupService {
     const searchCVU = await this._balanceEntityRepository.find({
       where: { cvu: accountrouting },
     });
-    const client = await this._clientEntityRepository.findOne({
+    let client;
+    client = await this._clientEntityRepository.findOne({
       select: { cuit: true },
       where: { cvu: accountrouting },
     });
+    if (!client) {
+      client = this.datos.find((e) => e.cvu === accountrouting);
+      if (!client) return false;
+    }
+
     const user = await this._userEntityRepository.findOne({
       where: { cuitcuil: client.cuit },
     });
