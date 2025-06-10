@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { TypeTransactions } from '../enum';
 
 export class LoginDto {
@@ -115,14 +121,22 @@ export class arventGetTransactions {
   type?: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsDateString()
   @IsNotEmpty()
   fromDate: Date;
 
   @ApiProperty()
+  @IsOptional()
   @IsDateString()
   @IsNotEmpty()
   toDate: Date;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  id: string;
 }
 
 export class createClientCvu {
@@ -161,7 +175,7 @@ export class createClientCvuBind {
   name: string;
 }
 
-export class updateNameBind{
+export class updateNameBind {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()

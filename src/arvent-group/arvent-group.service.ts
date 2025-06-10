@@ -449,13 +449,16 @@ export class ArventGroupService {
 
     const typeTransaction =
       body.type === 'all' ? In(['credit', 'debit']) : body.type;
-    const data = await this._transactionEntityRepository
-      .find({
-        where: {
+    const where = body.id
+      ? { idTransaction: body.id }
+      : {
           email: body.accountEmail,
           type: typeTransaction,
           datetransaction: Between(body.fromDate, body.toDate), // Usar Between para el rango de fechas
-        },
+        };
+    const data = await this._transactionEntityRepository
+      .find({
+        where,
         take: body.limit,
         skip: body.offset,
         order: { datetransaction: 'DESC' },
