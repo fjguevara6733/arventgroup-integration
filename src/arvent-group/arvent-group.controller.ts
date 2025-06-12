@@ -12,6 +12,7 @@ import {
   UploadedFile,
   Put,
   Headers,
+  Query,
 } from '@nestjs/common';
 import { ArventGroupService } from './arvent-group.service';
 import {
@@ -82,7 +83,7 @@ export class ArventGroupController {
   async sendTransaction(
     @Body() payload: DoRequestDto,
     @Res() res: Response,
-    @Headers('key') key: string
+    @Headers('key') key: string,
   ) {
     console.log("@Post('send-transaction')");
     await this.arventGroupService
@@ -107,13 +108,15 @@ export class ArventGroupController {
 
   @Post('transactions-report')
   @ApiHeader({ name: 'api-key', required: true })
+  @ApiQuery({ name: 'response-completed', required: false })
   async transactionReport(
     @Res() res: Response,
     @Body() body: arventGetTransactions,
-  @Headers('key') key: string,
+    @Headers('key') key: string,
+    @Req() req
   ) {
     await this.arventGroupService
-      .transactionReport(body, key)
+      .transactionReport(body, key, req.query)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,

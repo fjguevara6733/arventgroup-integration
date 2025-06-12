@@ -442,7 +442,7 @@ export class ArventGroupService {
    * Servicio para listar las transacciones
    * @returns
    */
-  async transactionReport(body: arventGetTransactions, key: string) {
+  async transactionReport(body: arventGetTransactions, key: string, query) {
     if (!this.validateEnum(TypeTransactions, body.type))
       throw 'Tipo de transacción no válida';
 
@@ -464,6 +464,7 @@ export class ArventGroupService {
         datetransaction: Between(body.fromDate, body.toDate),
       });
     }
+    const total = await this._transactionEntityRepository.count({ where });
     const data = await this._transactionEntityRepository
       .find({
         where,
@@ -499,6 +500,14 @@ export class ArventGroupService {
           typeof e.response === 'string' ? JSON.parse(e.response) : e.response,
       };
     });
+
+    if (query && body.id === undefined) {
+      return query['response-completed'] === 'true'
+        ? { total, page: body.offset, limit: body.limit, data: response }
+        : response;
+    } else if (body.id) {
+      return response.length > 0 ? response[0] : {};
+    }
 
     return response;
   }
