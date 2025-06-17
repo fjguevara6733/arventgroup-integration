@@ -292,7 +292,7 @@ export class ArventGroupService {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
       origin_debit: {
         cvu: dataClient.cvu,
-        cuit: String(user.cuitcuil),
+        cuit: String(dataClient.cuit),
       },
       value: {
         currency: CoinsFiat.ARS,
