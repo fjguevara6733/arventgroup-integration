@@ -12,7 +12,7 @@ export class Account {
   @Column({ type: 'varchar', length: 255, nullable: true })
   key: string;
 
-  @Column({ name: 'secretKey', type: 'text', nullable: true })
+  @Column({ name: 'secret_key', type: 'text', nullable: true })
   secretKey: string;
 
   @Column({ name: 'need_webhook', nullable: true, default: false })
