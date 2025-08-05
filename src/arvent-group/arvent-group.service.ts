@@ -631,8 +631,8 @@ export class ArventGroupService {
         }).catch(async (error) => {
           await this._logsEntityRepository.save({
             request: JSON.stringify({
-              method: config.method,
-              url: config.url,
+              method: 'GET',
+              url: `/transaction-request-types/TRANSFER/${transaction.idTransaction}`,
             }),
             error: error,
             createdAt: this.convertDate(),
