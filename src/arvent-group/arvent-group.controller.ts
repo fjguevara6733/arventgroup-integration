@@ -83,11 +83,10 @@ export class ArventGroupController {
   async sendTransaction(
     @Body() payload: DoRequestDto,
     @Res() res: Response,
-    @Headers('key') key: string,
   ) {
     console.log("@Post('send-transaction')");
     await this.arventGroupService
-      .doTransaction(payload, key)
+      .doTransaction(payload)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
@@ -112,11 +111,9 @@ export class ArventGroupController {
   async transactionReport(
     @Res() res: Response,
     @Body() body: arventGetTransactions,
-    @Headers('key') key: string,
-    @Req() req,
   ) {
     await this.arventGroupService
-      .transactionReport(body, key, req.query)
+      .transactionReport(body)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
