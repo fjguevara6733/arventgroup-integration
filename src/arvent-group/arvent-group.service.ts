@@ -239,6 +239,8 @@ export class ArventGroupService {
    */
   async doTransaction(body: DoRequestDto, key: string = '') {
     const { destinationCbu, amount, email } = body;
+    console.log('body', body);
+    
 
     const emails = await this.getEmail(email, key);
     console.log('emails', emails);
