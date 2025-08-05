@@ -239,12 +239,8 @@ export class ArventGroupService {
    */
   async doTransaction(body: DoRequestDto, key: string = '') {
     const { destinationCbu, amount, email } = body;
-    console.log('body', body);
-    
 
     const emails = await this.getEmail(email, key);
-    console.log('emails', emails);
-
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
 
     const user = await this._userEntityRepository
@@ -277,7 +273,6 @@ export class ArventGroupService {
     const balances = await this.stateBalance({ cvu: dataClient.cvu }).then(
       (response) => response[0],
     );
-    console.log('whereClient', whereClient);
 
     if (
       Number(amount) > Number(balances.amount) ||
