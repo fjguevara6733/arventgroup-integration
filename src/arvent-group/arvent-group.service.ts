@@ -241,6 +241,8 @@ export class ArventGroupService {
     const { destinationCbu, amount, email } = body;
 
     const emails = await this.getEmail(email, key);
+    console.log('emails', emails);
+
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
 
     const user = await this._userEntityRepository
@@ -273,6 +275,7 @@ export class ArventGroupService {
     const balances = await this.stateBalance({ cvu: dataClient.cvu }).then(
       (response) => response[0],
     );
+    console.log('whereClient', whereClient);
 
     if (
       Number(amount) > Number(balances.amount) ||
@@ -567,7 +570,7 @@ export class ArventGroupService {
             method: config.method,
             url: config.url,
           }),
-          error: error,
+          error: JSON.stringify(error),
           createdAt: this.convertDate(),
           type: 'bind-get-transaction',
           method: 'POST',
