@@ -1031,7 +1031,7 @@ export class ArventGroupService {
 
   // Consultar estado de transacción en Bind
   private async fetchTransactionStatus(transaction: any) {
-    const transactionId = JSON.parse(transaction.response).transaction_ids[0];
+    const transactionId = transaction.idTransaction;
 
     const headers = {
       Authorization: `JWT ${await this.getToken()}`,
