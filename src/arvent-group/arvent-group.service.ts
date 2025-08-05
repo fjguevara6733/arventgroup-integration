@@ -1022,7 +1022,7 @@ export class ArventGroupService {
     return this._transactionEntityRepository.find({
       where: {
         status: In(['PENDING', 'AWAITING_CONFIRMATION', 'IN_PROGRESS']),
-        type: In(['credit', 'debit']),
+        type: In(['credit']),
         idTransaction: Not(In(completed.map((t) => t.idTransaction))),
       },
       order: { datetransaction: 'DESC' },
@@ -1031,7 +1031,7 @@ export class ArventGroupService {
 
   // Consultar estado de transacción en Bind
   private async fetchTransactionStatus(transaction: any) {
-    const transactionId = transaction.idTransaction;
+    const transactionId = JSON.parse(transaction.response).transaction_ids[0];
 
     const headers = {
       Authorization: `JWT ${await this.getToken()}`,
@@ -1859,12 +1859,12 @@ export class ArventGroupService {
       .then((response) => response.data)
       .catch(async (error) => {
         await this._logsEntityRepository.save({
-          request: JSON.stringify(config),
+          request: JSON.stringify({ url, method: 'GET' }),
           error: error?.response?.data?.message,
           createdAt: this.convertDate(),
-          type: 'bind-change-name',
+          type: 'transaction-request-types/TRANSFER',
           method: 'POST',
-          url: '/change-name-bind',
+          url: '/get-transaction-by/:id',
         });
         throw error?.response?.data?.message;
       });
