@@ -1002,7 +1002,6 @@ export class ArventGroupService {
       const response = await this.fetchTransactionStatus(transaction);
       const alreadyExists = await this.existsTransactionWithStatus(
         transaction.idTransaction,
-        response.status,
       );
       if (alreadyExists) continue;
 
@@ -1051,7 +1050,7 @@ export class ArventGroupService {
       return await axios(config).then((res) => res.data);
     } catch (error) {
       await this._logsEntityRepository.save({
-        request: JSON.stringify(config),
+        request: JSON.stringify({ url, method: 'GET' }),
         error: error?.response?.data?.message,
         createdAt: this.convertDate(),
         type: 'bind-debin',
@@ -1063,12 +1062,9 @@ export class ArventGroupService {
   }
 
   // Verificar si ya existe una transacción con ese status
-  private async existsTransactionWithStatus(
-    idTransaction: string,
-    status: string,
-  ) {
+  private async existsTransactionWithStatus(idTransaction: string) {
     const existing = await this._transactionEntityRepository.find({
-      where: { idTransaction, status },
+      where: { idTransaction },
     });
     return existing.length > 0;
   }
