@@ -999,7 +999,8 @@ export class ArventGroupService {
     const balances = await this.stateBalance({}).then((r) => r);
 
     for (const transaction of transactions) {
-      const response = await this.fetchTransactionStatus(transaction);
+      const transactionId = JSON.parse(transaction.response).transaction_ids[0];
+      const response = await this.fetchTransactionStatus(transactionId);
       const alreadyExists = await this.existsTransactionWithStatus(
         transaction.idTransaction,
       );
@@ -1030,9 +1031,7 @@ export class ArventGroupService {
   }
 
   // Consultar estado de transacción en Bind
-  private async fetchTransactionStatus(transaction: any) {
-    const transactionId = JSON.parse(transaction.response).transaction_ids[0];
-
+  private async fetchTransactionStatus(transactionId: string) {
     const headers = {
       Authorization: `JWT ${await this.getToken()}`,
     };
@@ -1076,7 +1075,7 @@ export class ArventGroupService {
       response: JSON.stringify(response),
       status: response.status,
       email: transaction.email,
-      datetransaction: response.start_date.replace('T', ' ').replace('Z', ''),
+      datetransaction: new Date(),
       type: transaction.type,
     });
   }
