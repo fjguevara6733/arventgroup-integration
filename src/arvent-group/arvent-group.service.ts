@@ -545,49 +545,20 @@ export class ArventGroupService {
       });
 
     for (const transaction of data) {
-      const config: AxiosRequestConfig = {
-        method: 'GET',
-        url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
-        httpsAgent: this.httpsAgent,
-      };
+      const dataResponse = await this.getTransactionById(
+        transaction.idTransaction,
+      );
       await this._logsEntityRepository.save({
         request: JSON.stringify({
           method: 'GET',
-          url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
+          url:  `/transaction-request-types/TRANSFER/${transaction.idTransaction}`,
         }),
-        error: '',
+        error: JSON.stringify(dataResponse),
         createdAt: this.convertDate(),
         type: 'bind-get-transaction',
         method: 'POST',
         url: '/transactions-update',
       });
-      const responseAxios = await axios(config).catch(async (error) => {
-        await this._logsEntityRepository.save({
-          request: JSON.stringify({
-            method: config.method,
-            url: config.url,
-          }),
-          error: JSON.stringify(error),
-          createdAt: this.convertDate(),
-          type: 'bind-get-transaction',
-          method: 'POST',
-          url: '/transactions-update',
-        });
-        return error;
-      });
-      await this._logsEntityRepository.save({
-        request: JSON.stringify({
-          method: 'GET',
-          url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
-        }),
-        error: JSON.stringify(responseAxios.data),
-        createdAt: this.convertDate(),
-        type: 'bind-get-transaction',
-        method: 'POST',
-        url: '/transactions-update',
-      });
-      const data = responseAxios.data?.data || responseAxios.data;
-      const dataResponse = data;
       await this._paymentEntityRepository
         .update(transaction.id, {
           status: dataResponse.status,
@@ -646,7 +617,7 @@ export class ArventGroupService {
 
       if (accounts.length > 0) {
         const account = accounts.find((e) => e.email === transaction.email);
-        if (!account) continue;
+        if (!account || !account.needWebhook) continue;
 
         await axios({
           method: 'POST',
