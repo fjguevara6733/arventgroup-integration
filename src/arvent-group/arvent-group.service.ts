@@ -1695,7 +1695,7 @@ export class ArventGroupService {
   }
 
   async getInformationAccount() {
-    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}`;
+    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.idView}`;
     const tokenExist = await this.getToken();
     const headers = {
       Authorization: `JWT ${tokenExist}`,
