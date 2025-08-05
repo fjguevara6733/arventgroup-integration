@@ -20,7 +20,7 @@ import {
   normalResponse,
   TypeTransactions,
 } from 'src/common/enum';
-import { EntityManager, In, Not, Repository } from 'typeorm';
+import { Between, EntityManager, In, Not, Repository } from 'typeorm';
 import * as https from 'https';
 import axios, { AxiosRequestConfig } from 'axios';
 import { readFileSync } from 'fs';
@@ -74,12 +74,12 @@ export class ArventGroupService {
     },
     {
       email: 'chronospay@integraciones.com',
-      id: 1,
+      id: 19,
       cvu: '0000058105193400884642',
     },
     {
       email: 'pablo@payexsrl.com',
-      id: 1,
+      id: 11,
       cvu: '0000058104351016263797',
     },
   ];
@@ -237,15 +237,25 @@ export class ArventGroupService {
    * @param body
    * @returns
    */
-  async doTransaction(body: DoRequestDto) {
+  async doTransaction(body: DoRequestDto, key: string = '') {
     const { destinationCbu, amount, email } = body;
 
-    const emails = await this.getEmail(email);
+    const emails = await this.getEmail(email, key);
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
+
+    const user = await this._userEntityRepository
+      .findOne({
+        where: { email: body.email },
+      })
+      .then((response) => response);
+    const whereClient = {};
+    if (emails) Object.assign(whereClient, { accountId: emails.id });
+
+    if (user) Object.assign(whereClient, { cuit: String(user.cuitcuil) });
 
     const dataClient = await this._clientEntityRepository
       .findOne({
-        where: { accountId: emails.id },
+        where: whereClient,
       })
       .then((response) => response)
       .catch(async (error) => {
@@ -257,26 +267,33 @@ export class ArventGroupService {
           method: 'POST',
           url: '/send-transaction',
         });
-        return error;
+        throw error;
       });
 
     const balances = await this.stateBalance({ cvu: dataClient.cvu }).then(
       (response) => response[0],
     );
 
-    if (Number(balances.amount) < Number(amount)) throw 'Fondos insuficientes';
-    const user = await this._userEntityRepository
-      .findOne({
-        where: { email: emails.email },
-      })
-      .then((response) => response);
-    console.log('user', user);
+    if (
+      Number(amount) > Number(balances.amount) ||
+      Number(balances.amount) <= 0
+    )
+      throw 'Fondos insuficientes';
+
+    await this._logsEntityRepository.save({
+      request: JSON.stringify(balances),
+      error: 'balance',
+      createdAt: this.convertDate(),
+      type: 'balance-sql',
+      method: 'POST',
+      url: '/send-transaction',
+    });
 
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
       origin_debit: {
         cvu: dataClient.cvu,
-        cuit: String(user.cuitcuil),
+        cuit: String(dataClient.cuit),
       },
       value: {
         currency: CoinsFiat.ARS,
@@ -301,13 +318,30 @@ export class ArventGroupService {
       httpsAgent: this.httpsAgent,
     };
 
+    await this._logsEntityRepository.save({
+      request: JSON.stringify({
+        method: 'POST',
+        url,
+        data: params,
+      }),
+      error: '',
+      createdAt: this.convertDate(),
+      type: 'body-transaction',
+      method: 'POST',
+      url: '/send-transaction',
+    });
+
     const response = await axios(config)
       .then((response) => response)
       .catch(async (error) => {
-        console.log(error.response.data);
+        console.log('error axios', error.response.data);
         await this._logsEntityRepository.save({
-          request: JSON.stringify(config),
-          error: error?.response?.data?.message,
+          request: JSON.stringify({
+            method: 'POST',
+            url,
+            data: params,
+          }),
+          error: JSON.stringify(error?.response?.data),
           createdAt: this.convertDate(),
           type: 'bind-transfer',
           method: 'POST',
@@ -315,8 +349,8 @@ export class ArventGroupService {
         });
         throw error?.response?.data?.message;
       });
-    const data = response.data;
 
+    const data = response.data;
     const dataString = JSON.stringify(data);
     await this._transactionEntityRepository
       .save({
@@ -365,7 +399,7 @@ export class ArventGroupService {
           }),
           error: error,
           createdAt: this.convertDate(),
-          type: 'payment-sql',
+          type: 'payments-sql',
           method: 'POST',
           url: '/send-transaction',
         });
@@ -379,14 +413,18 @@ export class ArventGroupService {
           id: balances.id,
         },
         {
-          amount: newBalance,
+          amount: newBalance < 0 ? 0 : newBalance,
         },
       )
       .then((response) => response)
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify({
-            amount: newBalance,
+            idTransaction: params.origin_id,
+            response: dataString,
+            status: data.status,
+            email: body.email,
+            dateTransaction: this.convertDate(),
           }),
           error: error,
           createdAt: this.convertDate(),
@@ -405,28 +443,43 @@ export class ArventGroupService {
    * Servicio para listar las transacciones
    * @returns
    */
-  async transactionReport(body: arventGetTransactions) {
+  async transactionReport(body: arventGetTransactions, key: string, query) {
     if (!this.validateEnum(TypeTransactions, body.type))
       throw 'Tipo de transacción no válida';
 
-    const emails = await this.getEmail(body.accountEmail);
+    const emails = await this.getEmail(body.accountEmail, key);
     if (emails === undefined) throw 'Email no asociado a ninguna cuenta';
 
     if (body.limit === 0) body.limit = 10;
 
     const typeTransaction =
       body.type === 'all' ? In(['credit', 'debit']) : body.type;
+    const where = body.id
+      ? { idTransaction: body.id }
+      : {
+          email: body.accountEmail,
+          type: typeTransaction,
+        };
+    if (body.fromDate && body.toDate) {
+      Object.assign(where, {
+        datetransaction: Between(body.fromDate, body.toDate),
+      });
+    }
+    const total = await this._transactionEntityRepository.count({ where });
     const data = await this._transactionEntityRepository
       .find({
-        where: { email: emails.email, type: typeTransaction },
+        where,
         take: body.limit,
         skip: body.offset,
+        order: { datetransaction: 'DESC' },
       })
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify({
             email: emails.email,
             type: typeTransaction,
+            fromDate: body.fromDate,
+            toDate: body.toDate,
           }),
           error: error,
           createdAt: this.convertDate(),
@@ -449,6 +502,14 @@ export class ArventGroupService {
       };
     });
 
+    if (query && body.id === undefined) {
+      return query['response-completed'] === 'true'
+        ? { total, page: body.offset, limit: body.limit, data: response }
+        : response;
+    } else if (body.id) {
+      return response.length > 0 ? response[0] : {};
+    }
+
     return response;
   }
 
@@ -464,17 +525,48 @@ export class ArventGroupService {
     });
 
     if (data.length === 0) return false;
+
+    const users = await this._userEntityRepository.find({
+      where: { email: In(data.map((e) => e.email)) },
+    });
+    const accounts = await this._accountEntityRepository
+      .find({
+        select: { id: true, email: true },
+        where: { needWebhook: true, id: In(users.map((e) => e.accountId)) },
+      })
+      .then((response) => {
+        return response.map((e) => {
+          const user = users.find((u) => u.accountId === e.id);
+          return {
+            ...e,
+            email: user.email,
+          };
+        });
+      });
+
     for (const transaction of data) {
-      const response = JSON.parse(transaction.response);
-      const { transaction_ids } = response;
       const config: AxiosRequestConfig = {
         method: 'GET',
-        url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction_ids[0]}`,
+        url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
         httpsAgent: this.httpsAgent,
       };
+      await this._logsEntityRepository.save({
+        request: JSON.stringify({
+          method: 'GET',
+          url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
+        }),
+        error: '',
+        createdAt: this.convertDate(),
+        type: 'bind-get-transaction',
+        method: 'POST',
+        url: '/transactions-update',
+      });
       const responseAxios = await axios(config).catch(async (error) => {
         await this._logsEntityRepository.save({
-          request: JSON.stringify(config),
+          request: JSON.stringify({
+            method: config.method,
+            url: config.url,
+          }),
           error: error,
           createdAt: this.convertDate(),
           type: 'bind-get-transaction',
@@ -483,8 +575,19 @@ export class ArventGroupService {
         });
         return error;
       });
-      const data = responseAxios.data;
-      const dataResponse = data.data;
+      await this._logsEntityRepository.save({
+        request: JSON.stringify({
+          method: 'GET',
+          url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction.idTransaction}`,
+        }),
+        error: JSON.stringify(responseAxios.data),
+        createdAt: this.convertDate(),
+        type: 'bind-get-transaction',
+        method: 'POST',
+        url: '/transactions-update',
+      });
+      const data = responseAxios.data?.data || responseAxios.data;
+      const dataResponse = data;
       await this._paymentEntityRepository
         .update(transaction.id, {
           status: dataResponse.status,
@@ -506,16 +609,19 @@ export class ArventGroupService {
           return error;
         });
       await this._transactionEntityRepository
-        .update(transaction.id, {
-          idTransaction: transaction.idTransaction,
-          status: dataResponse.status,
-          response: JSON.stringify(dataResponse),
-          email: transaction.email,
-          datetransaction: dataResponse.business_date
-            .replace('T', ' ')
-            .replace('Z', ''),
-          type: 'debit',
-        })
+        .update(
+          { idTransaction: transaction.idTransaction },
+          {
+            idTransaction: transaction.idTransaction,
+            status: dataResponse.status,
+            response: JSON.stringify(dataResponse),
+            email: transaction.email,
+            datetransaction: dataResponse.business_date
+              .replace('T', ' ')
+              .replace('Z', ''),
+            type: 'debit',
+          },
+        )
         .then((response) => response)
         .catch(async (error) => {
           await this._logsEntityRepository.save({
@@ -537,6 +643,36 @@ export class ArventGroupService {
           });
           return error;
         });
+
+      if (accounts.length > 0) {
+        const account = accounts.find((e) => e.email === transaction.email);
+        if (!account) continue;
+
+        await axios({
+          method: 'POST',
+          url: `${process.env.URL_VIRTUAL_ACCOUNT}/virtual-account/webhook`,
+          data: {
+            email: transaction.email,
+            status: dataResponse.status,
+            idTransaction: transaction.idTransaction,
+            payload: transaction.response,
+          },
+        }).catch(async (error) => {
+          await this._logsEntityRepository.save({
+            request: JSON.stringify({
+              method: config.method,
+              url: config.url,
+            }),
+            error: error,
+            createdAt: this.convertDate(),
+            type: 'virtul-account-webhook',
+            method: 'POST',
+            url: '/transactions-update',
+          });
+
+          return error;
+        });
+      }
     }
     return true;
   }
@@ -547,6 +683,7 @@ export class ArventGroupService {
     const webhooks = await this._webhookEntityRepository.find({
       where: { status: 'active' },
     });
+
     const transactions = webhooks.map((webhook) => {
       const dataJson = JSON.parse(webhook.response);
       return {
@@ -589,10 +726,16 @@ export class ArventGroupService {
     const searchCVU = await this._balanceEntityRepository.find({
       where: { cvu: accountrouting },
     });
-    const client = await this._clientEntityRepository.findOne({
+    let client;
+    client = await this._clientEntityRepository.findOne({
       select: { cuit: true },
       where: { cvu: accountrouting },
     });
+    if (!client) {
+      client = this.datos.find((e) => e.cvu === accountrouting);
+      if (!client) return false;
+    }
+
     const user = await this._userEntityRepository.findOne({
       where: { cuitcuil: client.cuit },
     });
@@ -663,14 +806,14 @@ export class ArventGroupService {
   }
 
   private async updateBalances(accountCredits) {
-    const balances = await this.stateBalance('');
+    const balances = await this.stateBalance({});
 
     for (const account of accountCredits) {
       const dataBalance = balances.find((e) => e.cvu === account.cvu);
       if (dataBalance) {
         const total = Number(dataBalance.amount) + account.amount;
         await this._balanceEntityRepository
-          .update(dataBalance.id, { amount: total })
+          .update(dataBalance.id, { amount: total < 0 ? 0 : total })
           .catch(async (error) => {
             await this._logsEntityRepository.save({
               request: JSON.stringify({ amount: total }),
@@ -694,7 +837,7 @@ export class ArventGroupService {
    * @returns
    */
   async stateBalance(where: any, isCalled = false) {
-    let filter = {};
+    let filter = where ? { ...where } : {};
     if (isCalled) {
       const user = await this._userEntityRepository
         .findOne({
@@ -712,26 +855,33 @@ export class ArventGroupService {
           return error;
         });
 
-      const client = await this._clientEntityRepository
-        .findOne({
-          where: { cuit: user.cuitcuil },
-        })
-        .catch(async (error) => {
-          await this._logsEntityRepository.save({
-            request: JSON.stringify({ cuit: user.cuitcuil }),
-            error: error,
-            createdAt: this.convertDate(),
-            type: 'client-sql',
-            method: 'POST',
-            url: '/balance',
+      if (user) {
+        const client = await this._clientEntityRepository
+          .findOne({
+            where: { cuit: user.cuitcuil, accountId: user.accountId },
+          })
+          .catch(async (error) => {
+            await this._logsEntityRepository.save({
+              request: JSON.stringify({ cuit: user.cuitcuil }),
+              error: error,
+              createdAt: this.convertDate(),
+              type: 'client-sql',
+              method: 'POST',
+              url: '/balance',
+            });
+            return error;
           });
-          return error;
-        });
 
-      if (!client) throw 'Email no asociado a ninguna cuenta';
+        if (!client) throw 'Email no asociado a ninguna cuenta';
 
-      filter = { cvu: client.cvu };
+        filter = { cvu: client.cvu };
+      } else {
+        const cvu = this.datos.find((e) => e.email === where.email).cvu;
+        filter = { cvu: cvu };
+      }
     }
+    console.log('filter', filter);
+
     return await this._balanceEntityRepository
       .find({
         where: filter,
@@ -831,7 +981,7 @@ export class ArventGroupService {
           method: 'POST',
           url: '/get-transaction-debin',
         });
-        return error;
+        throw error;
       });
 
     return response;
@@ -846,7 +996,7 @@ export class ArventGroupService {
     let newBalance = 0;
     const data = await this._transactionEntityRepository.find({
       where: {
-        status: In(['PENDING', 'AWAITING_CONFIRMATION']),
+        status: In(['PENDING', 'AWAITING_CONFIRMATION', 'IN_PROGRESS']),
         type: 'credit',
         idTransaction: Not(
           In(
@@ -864,80 +1014,78 @@ export class ArventGroupService {
       },
     });
 
-    if (data.length > 0) {
-      const balances = await this.stateBalance({}).then((response) => response);
+    if (data.length === 0) return false;
 
-      for (const transaction of data) {
-        const responseTransaction = JSON.parse(transaction.response);
-        const { transaction_ids } = responseTransaction;
-        const emails = this.datos.find(
-          (e) =>
-            e.email.toLocaleLowerCase() ===
-            transaction.email.toLocaleLowerCase(),
-        );
-        const balanceAccount = balances.find((e) => e.cvu === emails.cvu);
-        const headers = {
-          Authorization: `JWT ${await this.getToken()}`,
-        };
-        const url: string = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/DEBIN/${transaction_ids[0]}`;
-        const config: AxiosRequestConfig = {
-          method: 'GET',
-          url,
-          headers,
-          httpsAgent: this.httpsAgent,
-        };
+    const balances = await this.stateBalance({}).then((response) => response);
 
-        const response = await axios(config)
-          .then((response) => response.data)
-          .catch(async (error) => {
-            await this._logsEntityRepository.save({
-              request: JSON.stringify(config),
-              error: error?.response?.data?.message,
-              createdAt: this.convertDate(),
-              type: 'bind-debin',
-              method: 'GET',
-              url: '/transactions-get-credit',
-            });
-            throw error?.response?.data?.message;
+    for (const transaction of data) {
+      const responseTransaction = JSON.parse(transaction.response);
+      const { transaction_ids } = responseTransaction;
+      const emails = this.datos.find(
+        (e) =>
+          e.email.toLocaleLowerCase() === transaction.email.toLocaleLowerCase(),
+      );
+      const balanceAccount = balances.find((e) => e.cvu === emails.cvu);
+      const headers = {
+        Authorization: `JWT ${await this.getToken()}`,
+      };
+      const url: string = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/DEBIN/${transaction_ids[0]}`;
+      const config: AxiosRequestConfig = {
+        method: 'GET',
+        url,
+        headers,
+        httpsAgent: this.httpsAgent,
+      };
+
+      const response = await axios(config)
+        .then((response) => response.data)
+        .catch(async (error) => {
+          await this._logsEntityRepository.save({
+            request: JSON.stringify(config),
+            error: error?.response?.data?.message,
+            createdAt: this.convertDate(),
+            type: 'bind-debin',
+            method: 'GET',
+            url: '/transactions-get-credit',
           });
-        const existingTransaction =
-          await this._transactionEntityRepository.find({
-            where: {
-              idTransaction: transaction.idTransaction,
-              status: response.status,
+          throw error?.response?.data?.message;
+        });
+      const existingTransaction = await this._transactionEntityRepository.find({
+        where: {
+          idTransaction: transaction.idTransaction,
+          status: response.status,
+        },
+      });
+
+      if (existingTransaction.length === 0) {
+        await this._transactionEntityRepository
+          .save({
+            idTransaction: transaction.idTransaction,
+            response: JSON.stringify(response),
+            status: response.status,
+            email: transaction.email,
+            datetransaction: response.start_date
+              .replace('T', ' ')
+              .replace('Z', ''),
+            type: 'credit',
+          })
+          .then((response) => response)
+          .catch((error) => error);
+
+        const { charge } = response;
+        newBalance =
+          Number(balanceAccount.amount) + Number(charge.value.amount);
+        await this._balanceEntityRepository
+          .update(
+            {
+              id: balanceAccount.id,
             },
-          });
-
-        if (existingTransaction.length === 0) {
-          await this._transactionEntityRepository
-            .save({
-              idTransaction: transaction.idTransaction,
-              response: JSON.stringify(response),
-              status: response.status,
-              email: transaction.email,
-              datetransaction: response.start_date
-                .replace('T', ' ')
-                .replace('Z', ''),
-              type: 'credit',
-            })
-            .then((response) => response)
-            .catch((error) => error);
-
-          const { charge } = response;
-          newBalance =
-            Number(balanceAccount.amount) + Number(charge.value.amount);
-          await this._balanceEntityRepository
-            .update(
-              {
-                id: balanceAccount.id,
-              },
-              {
-                amount: newBalance,
-              },
-            )
-            .then((response) => response)
-            .catch((error) => error);
-        }
+            {
+              amount: newBalance,
+            },
+          )
+          .then((response) => response)
+          .catch((error) => error);
       }
     }
 
@@ -1016,8 +1164,7 @@ export class ArventGroupService {
           method: 'POST',
           url: '/create-natural-person',
         });
-
-        return error.driverError;
+        throw error;
       });
     if (user.length > 0)
       throw 'Ya existe un cliente con este CUIT/CUIL o email.';
@@ -1025,6 +1172,7 @@ export class ArventGroupService {
     const account = key
       ? await this._accountEntityRepository
           .findOne({
+            select: { id: true, key: true },
             where: { key },
           })
           .then((response) => response)
@@ -1047,20 +1195,17 @@ export class ArventGroupService {
       email: body.email,
       accountId: account ? account.id : 0,
     };
-    await this._userEntityRepository
-      .save(bodyUser)
-      .catch(async (error) => {
-        await this._logsEntityRepository.save({
-          request: JSON.stringify(bodyUser),
-          error: error,
-          createdAt: this.convertDate(),
-          type: 'user-sql',
-          method: 'POST',
-          url: '/create-natural-person',
-        });
-        throw 'Error al crear el usuario';
-      })
-      .then((result) => result);
+    await this._userEntityRepository.save(bodyUser).catch(async (error) => {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(bodyUser),
+        error: error,
+        createdAt: this.convertDate(),
+        type: 'user-sql',
+        method: 'POST',
+        url: '/create-natural-person',
+      });
+      throw 'Error al crear el usuario';
+    });
 
     return { customerId: uuid, ...body };
   }
@@ -1095,7 +1240,19 @@ export class ArventGroupService {
           { email: body.email.toLocaleLowerCase() },
         ],
       })
-      .then((response) => response);
+      .then((response) => response)
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(userCompany),
+          error: error,
+          createdAt: this.convertDate(),
+          type: 'user-company-sql',
+          method: 'POST',
+          url: '/create-juridic-person',
+        });
+        console.error('Error saving user company:', error);
+        throw new Error('Error saving user company');
+      });
     if (user.length > 0)
       throw 'Ya existe un cliente con este CUIT/CUIL o Email.';
 
@@ -1123,15 +1280,7 @@ export class ArventGroupService {
     await this._userCompanyEntityRepository
       .save(userCompany)
       .then((result) => result)
-      .catch(async (error) => {
-        await this._logsEntityRepository.save({
-          request: JSON.stringify(userCompany),
-          error: error,
-          createdAt: this.convertDate(),
-          type: 'user-company-sql',
-          method: 'POST',
-          url: '/create-juridic-person',
-        });
+      .catch((error) => {
         console.error('Error saving user company:', error);
         throw new Error('Error saving user company');
       });
@@ -1147,7 +1296,7 @@ export class ArventGroupService {
    */
   async createClientCvu(body: createClientCvu) {
     const user = await this.validateUser(body.customerId);
-    const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
+    const cuit = user.isNatural ? user.cuitcuil : user.cuit_cdi_cie;
     const files = await this._fileEntityRepository
       .find({
         where: { cuit },
@@ -1168,9 +1317,9 @@ export class ArventGroupService {
       name: user.isNatural
         ? `${user.name} ${user.lastName}`
         : `${user.name} ${user.last_name}`,
-      cuit: user.isNatural ? user.cuitCuil : user.cuit_cdi_cie,
+      cuit,
     };
-    await this.validateClient(data.cuit);
+    await this.validateClient(data.cuit, user.accountId);
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
     const tokenExist = await this.getToken();
@@ -1208,9 +1357,6 @@ export class ArventGroupService {
     });
     await this._clientEntityRepository
       .save(sqlClient)
-      .catch((error) => {
-        throw error;
-      })
       .then((response) => response)
       .catch(async (error) => {
         await this._logsEntityRepository.save({
@@ -1251,31 +1397,27 @@ export class ArventGroupService {
   async createCvuBind(body: createClientCvuBind, key: string) {
     const account = key
       ? await this._accountEntityRepository.findOne({
+          select: { id: true, key: true },
           where: { key },
         })
       : 0;
-    const uuid = uuidv4().replace(/-/g, '').substring(0, 10); // Genera un UUID y elimina los guiones
-    const numericUUID = Number(uuid);
+    // Genera un UUID de 20 dígitos numéricos aleatorios
+    const uuid = Array.from({ length: 12 }, () =>
+      Math.floor(Math.random() * 10),
+    ).join('');
+    const numericUUID = uuid;
     const data: Client = {
       client_id: Number(numericUUID),
       currency: 'ARS',
       name: body.name,
       cuit: body.cuit,
     };
-    await this.validateClient(data.cuit);
+    await this.validateClient(data.cuit, account ? account.id : 0);
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
     const tokenExist = await this.getToken();
     const headers = {
       Authorization: `JWT ${tokenExist}`,
-    };
-
-    const config: AxiosRequestConfig = {
-      method: 'POST',
-      url,
-      data,
-      headers,
-      httpsAgent: this.httpsAgent,
     };
     await this._logsEntityRepository.save({
       method: 'POST',
@@ -1289,6 +1431,13 @@ export class ArventGroupService {
       }),
       date: this.convertDate(),
     });
+    const config: AxiosRequestConfig = {
+      method: 'POST',
+      url,
+      data,
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
     const response = await axios(config)
       .then((response) => response.data)
       .catch(async (error) => {
@@ -1318,6 +1467,7 @@ export class ArventGroupService {
       url: '/create-cvu-client-bind',
       error: JSON.stringify(response),
     });
+
     const sqlClient = await this._clientEntityRepository.create({
       clientId: String(data.client_id),
       cuit: data.cuit,
@@ -1388,7 +1538,7 @@ export class ArventGroupService {
       throw 'El docType no es asignable para un usuario natural.';
 
     const imageData = `"${file.buffer.toString('base64')}"`;
-    const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
+    const cuit = user.isNatural ? user.cuitcuil : user.cuit_cdi_cie;
     const files = await this._fileEntityRepository
       .find({ where: { cuit, typefile: body.docType } })
       .then((response) => response[0]);
@@ -1429,11 +1579,11 @@ export class ArventGroupService {
    */
   async getDataUser(customerId) {
     const user = await this.validateUser(customerId);
-    const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
+    const cuit = user.isNatural ? user.cuitcuil : user.cuit_cdi_cie;
     const files = await this._fileEntityRepository.find({
       where: { cuit },
     });
-    const dataClient = await this.validateClient(cuit, false);
+    const dataClient = await this.validateClient(cuit, user.accountId, false);
 
     const id = user.uuid;
     delete user.uuid;
@@ -1527,7 +1677,11 @@ export class ArventGroupService {
       : { isNatural: false, ...existClientJuridic };
   }
 
-  private async validateClient(cuit: string, needError = true) {
+  private async validateClient(
+    cuit: string,
+    accountId: number,
+    needError = true,
+  ) {
     const existCvu = await this._clientEntityRepository
       .findOne({
         where: { cuit: cuit },
@@ -1584,6 +1738,7 @@ export class ArventGroupService {
         date: this.convertDate(),
         status: 'active',
       });
+      await this.creditTransactions();
       return 'Webhook creado correctamente';
     }
     return 'Webhook vacio';
@@ -1620,15 +1775,19 @@ export class ArventGroupService {
       });
   }
 
-  async getEmail(email: string) {
+  async getEmail(email: string, key: string = '') {
     return await this._accountEntityRepository
       .findOne({
-        where: { email },
+        select: {
+          email: true,
+          id: true,
+        },
+        where: [{ email }, { key }],
       })
       .then((response) => response)
       .catch(async (error) => {
         await this._logsEntityRepository.save({
-          request: JSON.stringify({ email }),
+          request: JSON.stringify({ email, key }),
           error: error,
           createdAt: this.convertDate(),
           type: 'account-sql',
@@ -1644,11 +1803,13 @@ export class ArventGroupService {
     email: string;
     key: string;
     secretKey: string;
+    needWebhook: boolean;
   }) {
     const data = this._accountEntityRepository.create({
       email: body.email,
       key: body.key,
       secretKey: body.secretKey,
+      needWebhook: body.needWebhook,
     });
     return await this._accountEntityRepository
       .save(data)
@@ -1656,7 +1817,7 @@ export class ArventGroupService {
       .catch(async (error) => {
         await this._logsEntityRepository.save({
           request: JSON.stringify(data),
-          error: error.message,
+          error: error,
           createdAt: this.convertDate(),
           type: 'account-sql',
           method: 'POST',
