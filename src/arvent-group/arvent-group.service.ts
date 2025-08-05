@@ -993,103 +993,122 @@ export class ArventGroupService {
    * @returns
    */
   async updateStatusTransactionsCredit() {
-    let newBalance = 0;
-    const data = await this._transactionEntityRepository.find({
-      where: {
-        status: In(['PENDING', 'AWAITING_CONFIRMATION', 'IN_PROGRESS']),
-        type: 'credit',
-        idTransaction: Not(
-          In(
-            (
-              await this._transactionEntityRepository.find({
-                where: { status: In(['COMPLETED', 'EXPIRED']) },
-                select: ['idTransaction'],
-              })
-            ).map((t) => t.idTransaction),
-          ),
-        ),
-      },
-      order: {
-        datetransaction: 'DESC',
-      },
-    });
+    const transactions = await this.getPendingTransactions();
+    if (transactions.length === 0) return false;
 
-    if (data.length === 0) return false;
+    const balances = await this.stateBalance({}).then((r) => r);
 
-    const balances = await this.stateBalance({}).then((response) => response);
-
-    for (const transaction of data) {
-      const responseTransaction = JSON.parse(transaction.response);
-      const { transaction_ids } = responseTransaction;
-      const emails = this.datos.find(
-        (e) =>
-          e.email.toLocaleLowerCase() === transaction.email.toLocaleLowerCase(),
+    for (const transaction of transactions) {
+      const response = await this.fetchTransactionStatus(transaction);
+      const alreadyExists = await this.existsTransactionWithStatus(
+        transaction.idTransaction,
+        response.status,
       );
-      const balanceAccount = balances.find((e) => e.cvu === emails.cvu);
-      const headers = {
-        Authorization: `JWT ${await this.getToken()}`,
-      };
-      const url: string = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/DEBIN/${transaction_ids[0]}`;
-      const config: AxiosRequestConfig = {
-        method: 'GET',
-        url,
-        headers,
-        httpsAgent: this.httpsAgent,
-      };
+      if (alreadyExists) continue;
 
-      const response = await axios(config)
-        .then((response) => response.data)
-        .catch(async (error) => {
-          await this._logsEntityRepository.save({
-            request: JSON.stringify(config),
-            error: error?.response?.data?.message,
-            createdAt: this.convertDate(),
-            type: 'bind-debin',
-            method: 'GET',
-            url: '/transactions-get-credit',
-          });
-          throw error?.response?.data?.message;
-        });
-      const existingTransaction = await this._transactionEntityRepository.find({
-        where: {
-          idTransaction: transaction.idTransaction,
-          status: response.status,
-        },
-      });
-
-      if (existingTransaction.length === 0) {
-        await this._transactionEntityRepository
-          .save({
-            idTransaction: transaction.idTransaction,
-            response: JSON.stringify(response),
-            status: response.status,
-            email: transaction.email,
-            datetransaction: response.start_date
-              .replace('T', ' ')
-              .replace('Z', ''),
-            type: 'credit',
-          })
-          .then((response) => response)
-          .catch((error) => error);
-
-        const { charge } = response;
-        newBalance =
-          Number(balanceAccount.amount) + Number(charge.value.amount);
-        await this._balanceEntityRepository
-          .update(
-            {
-              id: balanceAccount.id,
-            },
-            {
-              amount: newBalance,
-            },
-          )
-          .then((response) => response)
-          .catch((error) => error);
-      }
+      await this.saveUpdatedTransaction(transaction, response);
+      await this.updateUserBalance(transaction, response, balances);
     }
 
     return true;
+  }
+
+  // Obtener transacciones pendientes que no estén finalizadas
+  private async getPendingTransactions() {
+    const completed = await this._transactionEntityRepository.find({
+      where: { status: In(['COMPLETED', 'EXPIRED']) },
+      select: ['idTransaction'],
+    });
+
+    return this._transactionEntityRepository.find({
+      where: {
+        status: In(['PENDING', 'AWAITING_CONFIRMATION', 'IN_PROGRESS']),
+        type: In(['credit', 'debit']),
+        idTransaction: Not(In(completed.map((t) => t.idTransaction))),
+      },
+      order: { datetransaction: 'DESC' },
+    });
+  }
+
+  // Consultar estado de transacción en Bind
+  private async fetchTransactionStatus(transaction: any) {
+    const transactionId = JSON.parse(transaction.response).transaction_ids[0];
+
+    const headers = {
+      Authorization: `JWT ${await this.getToken()}`,
+    };
+
+    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/DEBIN/${transactionId}`;
+
+    const config: AxiosRequestConfig = {
+      method: 'GET',
+      url,
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
+
+    try {
+      return await axios(config).then((res) => res.data);
+    } catch (error) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(config),
+        error: error?.response?.data?.message,
+        createdAt: this.convertDate(),
+        type: 'bind-debin',
+        method: 'GET',
+        url: '/transactions-get',
+      });
+      throw error?.response?.data?.message;
+    }
+  }
+
+  // Verificar si ya existe una transacción con ese status
+  private async existsTransactionWithStatus(
+    idTransaction: string,
+    status: string,
+  ) {
+    const existing = await this._transactionEntityRepository.find({
+      where: { idTransaction, status },
+    });
+    return existing.length > 0;
+  }
+
+  // Guardar transacción actualizada en BD
+  private async saveUpdatedTransaction(transaction: any, response: any) {
+    return this._transactionEntityRepository.save({
+      idTransaction: transaction.idTransaction,
+      response: JSON.stringify(response),
+      status: response.status,
+      email: transaction.email,
+      datetransaction: response.start_date.replace('T', ' ').replace('Z', ''),
+      type: transaction.type,
+    });
+  }
+
+  // Actualizar balance del usuario según tipo de transacción
+  private async updateUserBalance(
+    transaction: any,
+    response: any,
+    balances: any[],
+  ) {
+    const { charge } = response;
+    const emails = this.datos.find(
+      (e) => e.email.toLowerCase() === transaction.email.toLowerCase(),
+    );
+    const balanceAccount = balances.find((e) => e.cvu === emails.cvu);
+
+    const currentBalance = Number(balanceAccount.amount);
+    const amount = Number(charge.value.amount);
+
+    const newBalance =
+      transaction.type === 'credit'
+        ? currentBalance + amount
+        : currentBalance - amount;
+
+    return this._balanceEntityRepository.update(
+      { id: balanceAccount.id },
+      { amount: newBalance },
+    );
   }
 
   /**
