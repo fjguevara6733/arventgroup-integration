@@ -113,7 +113,7 @@ export class ArventGroupController {
     @Res() res: Response,
     @Body() body: arventGetTransactions,
     @Headers('key') key: string,
-    @Req() req
+    @Req() req,
   ) {
     await this.arventGroupService
       .transactionReport(body, key, req.query)
@@ -636,6 +636,31 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error transactions',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Get('get-information-account')
+  @ApiHeader({ name: 'api-key', required: true })
+  async getInformationAccount(@Res() res: Response) {
+    await this.arventGroupService
+      .getInformationAccount()
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'get-information-account',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error get-information-account',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);
