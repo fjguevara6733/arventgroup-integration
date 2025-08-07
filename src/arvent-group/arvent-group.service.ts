@@ -532,7 +532,7 @@ export class ArventGroupService {
     const accounts = await this._accountEntityRepository
       .find({
         select: { id: true, email: true },
-        where: { needWebhook: true, id: In(users.map((e) => e.accountId)) },
+        where: { id: In(users.map((e) => e.accountId)) },
       })
       .then((response) => {
         return response.map((e) => {
