@@ -1736,8 +1736,8 @@ const response = await axios(config)
         await this._logsEntityRepository.save({
           request: JSON.stringify({
             method: 'POST',
-            url,
-            data: params,
+            url: "https://penny-api-ramps.alfredpay.app/v1/chronos/webhook",
+            data: body,
           }),
           error: JSON.stringify(error?.response?.data),
           createdAt: this.convertDate(),
