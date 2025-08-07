@@ -457,34 +457,47 @@ export class ArventGroupService {
    * Servicio para actualizar los estados de las transacciones realizadas
    * @returns
    */
-  async updateStatusTransactions() {
+ async updateStatusTransactions() {
     const data = await this._paymentEntityRepository.find({
       where: { status: 'IN_PROGRESS' },
       take: 10,
     });
 
     if (data.length === 0) return false;
-    for (const transaction of data) {
-      const response = JSON.parse(transaction.response);
-      const { transaction_ids } = response;
-      const config: AxiosRequestConfig = {
-        method: 'GET',
-        url: `https://services.chronos-pay.org/alfred-wallet/v1/transaction/get-transaction/${transaction_ids[0]}`,
-        httpsAgent: this.httpsAgent,
-      };
-      const responseAxios = await axios(config).catch(async (error) => {
-        await this._logsEntityRepository.save({
-          request: JSON.stringify(config),
-          error: error,
-          createdAt: this.convertDate(),
-          type: 'bind-get-transaction',
-          method: 'POST',
-          url: '/transactions-update',
+
+    const users = await this._userEntityRepository.find({
+      where: { email: In(data.map((e) => e.email)) },
+    });
+    const accounts = await this._accountEntityRepository
+      .find({
+        select: { id: true, email: true },
+        where: { id: In(users.map((e) => e.accountId)) },
+      })
+      .then((response) => {
+        return response.map((e) => {
+          const user = users.find((u) => u.accountId === e.id);
+          return {
+            ...e,
+            email: user.email,
+          };
         });
-        return error;
       });
-      const data = responseAxios.data;
-      const dataResponse = data.data;
+
+    for (const transaction of data) {
+      const dataResponse = await this.getTransactionById(
+        transaction.idTransaction,
+      );
+      await this._logsEntityRepository.save({
+        request: JSON.stringify({
+          method: 'GET',
+          url:  `/transaction-request-types/TRANSFER/${transaction.idTransaction}`,
+        }),
+        error: JSON.stringify(dataResponse),
+        createdAt: this.convertDate(),
+        type: 'bind-get-transaction',
+        method: 'POST',
+        url: '/transactions-update',
+      });
       await this._paymentEntityRepository
         .update(transaction.id, {
           status: dataResponse.status,
@@ -506,16 +519,19 @@ export class ArventGroupService {
           return error;
         });
       await this._transactionEntityRepository
-        .update(transaction.id, {
-          idTransaction: transaction.idTransaction,
-          status: dataResponse.status,
-          response: JSON.stringify(dataResponse),
-          email: transaction.email,
-          datetransaction: dataResponse.business_date
-            .replace('T', ' ')
-            .replace('Z', ''),
-          type: 'debit',
-        })
+        .update(
+          { idTransaction: transaction.idTransaction },
+          {
+            idTransaction: transaction.idTransaction,
+            status: dataResponse.status,
+            response: JSON.stringify(dataResponse),
+            email: transaction.email,
+            datetransaction: dataResponse.business_date
+              .replace('T', ' ')
+              .replace('Z', ''),
+            type: 'debit',
+          },
+        )
         .then((response) => response)
         .catch(async (error) => {
           await this._logsEntityRepository.save({
@@ -537,6 +553,36 @@ export class ArventGroupService {
           });
           return error;
         });
+
+      if (accounts.length > 0) {
+        const account = accounts.find((e) => e.email === transaction.email);
+        if (!account || !account.needWebhook) continue;
+
+        await axios({
+          method: 'POST',
+          url: `${process.env.URL_VIRTUAL_ACCOUNT}/virtual-account/webhook`,
+          data: {
+            email: transaction.email,
+            status: dataResponse.status,
+            idTransaction: transaction.idTransaction,
+            payload: transaction.response,
+          },
+        }).catch(async (error) => {
+          await this._logsEntityRepository.save({
+            request: JSON.stringify({
+              method: 'GET',
+              url: `/transaction-request-types/TRANSFER/${transaction.idTransaction}`,
+            }),
+            error: error,
+            createdAt: this.convertDate(),
+            type: 'virtul-account-webhook',
+            method: 'POST',
+            url: '/transactions-update',
+          });
+
+          return error;
+        });
+      }
     }
     return true;
   }
