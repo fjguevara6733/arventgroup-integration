@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+ import { Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import {
   arventGetTransactions,
@@ -1726,7 +1726,7 @@ export class ArventGroupService {
       await this.creditTransactions();
 const config: AxiosRequestConfig = {
       method: 'POST',
-      url: "https://penny-api-ramps.alfredpay.app/v1/chronos/webhook",
+      url: "https://pennyapi-ramps.alfredpay.app/v1/chronos/webhook",
       data:body,
     };
 const response = await axios(config)
