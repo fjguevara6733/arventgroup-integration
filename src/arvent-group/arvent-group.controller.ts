@@ -12,6 +12,7 @@ import {
   UploadedFile,
   Put,
   Headers,
+  Query,
 } from '@nestjs/common';
 import { ArventGroupService } from './arvent-group.service';
 import {
@@ -660,6 +661,38 @@ export class ArventGroupController {
         const response = {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Error get-information-account',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
+
+  @Get('get-transactions-bind')
+  @ApiHeader({ name: 'api-key', required: true })
+  async getTransactionBind(
+    @Res() res: Response,
+    @Query('sort') sort?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('categories') categories?: string[],
+  ) {
+    await this.arventGroupService
+      .getTransactionBind(sort, limit, offset, from, to, categories)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'get-transactions-bind',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error get-transactions-bind',
           data: error,
         };
         res.status(HttpStatus.BAD_REQUEST).send(response);

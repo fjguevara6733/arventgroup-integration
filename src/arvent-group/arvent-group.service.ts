@@ -551,7 +551,7 @@ export class ArventGroupService {
       await this._logsEntityRepository.save({
         request: JSON.stringify({
           method: 'GET',
-          url:  `/transaction-request-types/TRANSFER/${transaction.idTransaction}`,
+          url: `/transaction-request-types/TRANSFER/${transaction.idTransaction}`,
         }),
         error: JSON.stringify(dataResponse),
         createdAt: this.convertDate(),
@@ -1846,6 +1846,48 @@ export class ArventGroupService {
     const headers = {
       Authorization: `JWT ${tokenExist}`,
     };
+
+    const config: AxiosRequestConfig = {
+      method: 'GET',
+      url,
+      headers,
+      httpsAgent: this.httpsAgent,
+    };
+    return await axios(config)
+      .then((response) => response.data)
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(config),
+          error: error?.response?.data?.message,
+          createdAt: this.convertDate(),
+          type: 'bind-change-name',
+          method: 'POST',
+          url: '/change-name-bind',
+        });
+        throw error?.response?.data?.message;
+      });
+  }
+
+  async getTransactionBind(
+    sort?: string,
+    limit?: string,
+    offset?: string,
+    from?: string,
+    to?: string,
+    categories?: string[],
+  ) {
+    const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transactions`;
+    const tokenExist = await this.getToken();
+    const headers: Record<string, string> = {
+      Authorization: `JWT ${tokenExist}`,
+    };
+    if (sort) headers.obp_sort_direction = sort;
+    if (limit) headers.obp_limit = limit;
+    if (offset) headers.obp_offset = offset;
+    if (from) headers.obp_from_date = from;
+    if (to) headers.obp_to_date = to;
+    if (categories && categories.length > 0)
+      headers.obp_categories = categories.join(',');
 
     const config: AxiosRequestConfig = {
       method: 'GET',
