@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+ import { Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import {
   arventGetTransactions,
@@ -1724,6 +1724,30 @@ export class ArventGroupService {
         status: 'active',
       });
       await this.creditTransactions();
+const config: AxiosRequestConfig = {
+      method: 'POST',
+      url: "https://pennyapi-ramps.alfredpay.app/v1/chronos/webhook",
+      data:body,
+    };
+const response = await axios(config)
+      .then((response) => response)
+      .catch(async (error) => {
+        console.log('error axios', error.response.data);
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({
+            method: 'POST',
+            url: "https://penny-api-ramps.alfredpay.app/v1/chronos/webhook",
+            data: body,
+          }),
+          error: JSON.stringify(error?.response?.data),
+          createdAt: this.convertDate(),
+          type: 'bind-transfer',
+          method: 'POST',
+          url: '/send-transaction',
+        });
+        throw error?.response?.data?.message;
+      });
+      
       return 'Webhook creado correctamente';
     }
     return 'Webhook vacio';
