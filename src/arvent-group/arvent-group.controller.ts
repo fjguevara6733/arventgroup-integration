@@ -698,4 +698,28 @@ export class ArventGroupController {
         res.status(HttpStatus.BAD_REQUEST).send(response);
       });
   }
+
+  @Get('virtual-account')
+  @ApiHeader({ name: 'api-key', required: true })
+  async getVirtualAccount(@Res() res: Response, @Query('id') id?: string) {
+    await this.arventGroupService
+      .getVirtualAccount(id)
+      .then((result) => {
+        const response = {
+          statusCode: HttpStatus.ACCEPTED,
+          message: 'create-virtual-account',
+          data: result,
+        };
+        res.status(HttpStatus.ACCEPTED).send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        const response = {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Error create-virtual-account',
+          data: error,
+        };
+        res.status(HttpStatus.BAD_REQUEST).send(response);
+      });
+  }
 }
