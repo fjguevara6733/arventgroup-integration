@@ -91,7 +91,13 @@ export class UserCompanyDTO {
   @IsNotEmpty()
   @IsString()
   cuitCDICIE: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  customerId: string;
 }
+
 
 export class PersonDTO {
   @ApiProperty({ enum: normalResponse, default: normalResponse[0] })

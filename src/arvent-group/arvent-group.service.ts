@@ -457,7 +457,7 @@ export class ArventGroupService {
    * Servicio para actualizar los estados de las transacciones realizadas
    * @returns
    */
- async updateStatusTransactions() {
+  async updateStatusTransactions() {
     const data = await this._paymentEntityRepository.find({
       where: { status: 'IN_PROGRESS' },
       take: 10,
@@ -490,7 +490,7 @@ export class ArventGroupService {
       await this._logsEntityRepository.save({
         request: JSON.stringify({
           method: 'GET',
-          url:  `/transaction-request-types/TRANSFER/${transaction.idTransaction}`,
+          url: `/transaction-request-types/TRANSFER/${transaction.idTransaction}`,
         }),
         error: JSON.stringify(dataResponse),
         createdAt: this.convertDate(),
@@ -740,9 +740,11 @@ export class ArventGroupService {
    * @returns
    */
   async stateBalance(where: any, isCalled = false) {
-    let filter = {};
+    let filter = where ? { ...where } : {};
+    let userAccount;
+
     if (isCalled) {
-      const user = await this._userEntityRepository
+      let user = await this._userCompanyEntityRepository
         .findOne({
           where: { email: where.email },
         })
@@ -751,33 +753,68 @@ export class ArventGroupService {
             request: JSON.stringify({ email: where.email }),
             error: error,
             createdAt: this.convertDate(),
-            type: 'user-sql',
+            type: 'user-company-sql',
             method: 'POST',
             url: '/balance',
           });
-          return error;
+          return undefined;
         });
-
-      const client = await this._clientEntityRepository
-        .findOne({
-          where: { cuit: user.cuitcuil },
-        })
-        .catch(async (error) => {
-          await this._logsEntityRepository.save({
-            request: JSON.stringify({ cuit: user.cuitcuil }),
-            error: error,
-            createdAt: this.convertDate(),
-            type: 'client-sql',
-            method: 'POST',
-            url: '/balance',
+      if (user)
+        userAccount = {
+          email: user.email,
+          accountId: user.accountId,
+          cuit: user.cuit_cdi_cie,
+        };
+      // Si no existe en userCompanies, busca en userEntity
+      if (!user) {
+        user = await this._userEntityRepository
+          .findOne({
+            where: { email: where.email },
+          })
+          .catch(async (error) => {
+            await this._logsEntityRepository.save({
+              request: JSON.stringify({ email: where.email }),
+              error: error,
+              createdAt: this.convertDate(),
+              type: 'user-sql',
+              method: 'POST',
+              url: '/balance',
+            });
+            return undefined;
           });
-          return error;
-        });
+        userAccount = {
+          email: user.email,
+          accountId: user.accountId,
+          cuit: user.cuitcuil,
+        };
+      }
 
-      if (!client) throw 'Email no asociado a ninguna cuenta';
+      if (user) {
+        const client = await this._clientEntityRepository
+          .findOne({
+            where: { cuit: userAccount.cuit, accountId: userAccount.accountId },
+          })
+          .catch(async (error) => {
+            await this._logsEntityRepository.save({
+              request: JSON.stringify({ cuit: userAccount.cuit }),
+              error: error,
+              createdAt: this.convertDate(),
+              type: 'client-sql',
+              method: 'POST',
+              url: '/balance',
+            });
+            return error;
+          });
 
-      filter = { cvu: client.cvu };
+        if (!client) throw 'Email no asociado a ninguna cuenta';
+
+        filter = { cvu: client.cvu };
+      } else {
+        const cvu = this.datos.find((e) => e.email === where.email).cvu;
+        filter = { cvu: cvu };
+      }
     }
+
     return await this._balanceEntityRepository
       .find({
         where: filter,
@@ -1117,7 +1154,7 @@ export class ArventGroupService {
    * @param body
    * @returns
    */
-  async createJuridicPerson(body: UserCompanyDTO) {
+  async createJuridicPerson(body: UserCompanyDTO, key: string = '') {
     if (!this.validateEnum(normalResponse, body.regulatedEntity20))
       throw 'El campo entidad regulada solo permite los valores de Si o No';
 
@@ -1141,11 +1178,31 @@ export class ArventGroupService {
           { email: body.email.toLocaleLowerCase() },
         ],
       })
-      .then((response) => response);
+      .then((response) => response)
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(userCompany),
+          error: error,
+          createdAt: this.convertDate(),
+          type: 'user-company-sql',
+          method: 'POST',
+          url: '/create-juridic-person',
+        });
+        console.error('Error saving user company:', error);
+        throw new Error('Error saving user company');
+      });
     if (user.length > 0)
       throw 'Ya existe un cliente con este CUIT/CUIL o Email.';
 
-    const uuid = uuidv4();
+    const account = key
+      ? await this._accountEntityRepository
+          .findOne({
+            select: { id: true, key: true },
+            where: { key },
+          })
+          .then((response) => response)
+      : 0;
+    const uuid = body.customerId ?? uuidv4();
     const userCompany = this._userCompanyEntityRepository.create({
       business_name: body.businessName,
       cuit_cdi_cie: body.cuitCDICIE,
@@ -1164,20 +1221,13 @@ export class ArventGroupService {
       name: body.name,
       last_name: body.lastName,
       uuid,
+      accountId: account ? account.id : 0,
     });
 
     await this._userCompanyEntityRepository
       .save(userCompany)
       .then((result) => result)
-      .catch(async (error) => {
-        await this._logsEntityRepository.save({
-          request: JSON.stringify(userCompany),
-          error: error,
-          createdAt: this.convertDate(),
-          type: 'user-company-sql',
-          method: 'POST',
-          url: '/create-juridic-person',
-        });
+      .catch((error) => {
         console.error('Error saving user company:', error);
         throw new Error('Error saving user company');
       });
