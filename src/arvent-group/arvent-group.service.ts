@@ -809,6 +809,7 @@ export class ArventGroupService {
    */
   async stateBalance(where: any, isCalled = false) {
     let filter = where ? { ...where } : {};
+    let userAccount;
     if (isCalled) {
       let user = await this._userCompanyEntityRepository
         .findOne({
@@ -825,7 +826,12 @@ export class ArventGroupService {
           });
           return undefined;
         });
-
+      if (user)
+        userAccount = {
+          email: user.email,
+          accountId: user.accountId,
+          cuit: user.cuit_cdi_cie,
+        };
       // Si no existe en userCompanies, busca en userEntity
       if (!user) {
         user = await this._userEntityRepository
@@ -843,16 +849,21 @@ export class ArventGroupService {
             });
             return undefined;
           });
+        userAccount = {
+          email: user.email,
+          accountId: user.accountId,
+          cuit: user.cuitcuil,
+        };
       }
 
       if (user) {
         const client = await this._clientEntityRepository
           .findOne({
-            where: { cuit: user.cuitcuil, accountId: user.accountId },
+            where: { cuit: userAccount.cuit, accountId: userAccount.accountId },
           })
           .catch(async (error) => {
             await this._logsEntityRepository.save({
-              request: JSON.stringify({ cuit: user.cuitcuil }),
+              request: JSON.stringify({ cuit: userAccount.cuit }),
               error: error,
               createdAt: this.convertDate(),
               type: 'client-sql',
@@ -1963,7 +1974,9 @@ export class ArventGroupService {
 
   async getVirtualAccount(id?: string) {
     return id
-      ? await this._accountEntityRepository.findOne({ where: { id: Number(id) } })
+      ? await this._accountEntityRepository.findOne({
+          where: { id: Number(id) },
+        })
       : await this._accountEntityRepository.find();
   }
 }
