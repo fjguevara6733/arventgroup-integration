@@ -286,9 +286,10 @@ export class ArventGroupController {
   async createJuridicPerson(
     @Res() res: Response,
     @Body() body: UserCompanyDTO,
+    @Headers('key') key: string,
   ) {
     await this.arventGroupService
-      .createJuridicPerson(body)
+      .createJuridicPerson(body, key)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,

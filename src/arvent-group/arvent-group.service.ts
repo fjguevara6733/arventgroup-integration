@@ -1203,6 +1203,7 @@ export class ArventGroupService {
           .then((response) => response)
       : 0;
     const uuid = body.customerId ?? uuidv4();
+
     const userCompany = this._userCompanyEntityRepository.create({
       business_name: body.businessName,
       cuit_cdi_cie: body.cuitCDICIE,
