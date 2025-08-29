@@ -719,8 +719,8 @@ export class ArventGroupService {
         status: 'COMPLETED',
         email: user.email,
         dateTransaction: cleanData.business_date
-          .replace('T', ' ')
-          .replace('Z', ''),
+          ? cleanData.business_date.replace('T', ' ').replace('Z', '')
+          : this.convertDate(),
         type: 'credit',
       });
       await this.markWebhookAsInactive(transaction.id);
@@ -1959,5 +1959,11 @@ export class ArventGroupService {
         });
         throw error?.response?.data?.message;
       });
+  }
+
+  async getVirtualAccount(id?: string) {
+    return id
+      ? await this._accountEntityRepository.findOne({ where: { id: Number(id) } })
+      : await this._accountEntityRepository.find();
   }
 }
