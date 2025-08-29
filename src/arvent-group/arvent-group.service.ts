@@ -1,4 +1,4 @@
- import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import {
   arventGetTransactions,
@@ -810,7 +810,7 @@ export class ArventGroupService {
   async stateBalance(where: any, isCalled = false) {
     let filter = where ? { ...where } : {};
     if (isCalled) {
-      const user = await this._userEntityRepository
+      let user = await this._userCompanyEntityRepository
         .findOne({
           where: { email: where.email },
         })
@@ -819,12 +819,31 @@ export class ArventGroupService {
             request: JSON.stringify({ email: where.email }),
             error: error,
             createdAt: this.convertDate(),
-            type: 'user-sql',
+            type: 'user-company-sql',
             method: 'POST',
             url: '/balance',
           });
-          return error;
+          return undefined;
         });
+
+      // Si no existe en userCompanies, busca en userEntity
+      if (!user) {
+        user = await this._userEntityRepository
+          .findOne({
+            where: { email: where.email },
+          })
+          .catch(async (error) => {
+            await this._logsEntityRepository.save({
+              request: JSON.stringify({ email: where.email }),
+              error: error,
+              createdAt: this.convertDate(),
+              type: 'user-sql',
+              method: 'POST',
+              url: '/balance',
+            });
+            return undefined;
+          });
+      }
 
       if (user) {
         const client = await this._clientEntityRepository
@@ -851,7 +870,6 @@ export class ArventGroupService {
         filter = { cvu: cvu };
       }
     }
-    console.log('filter', filter);
 
     return await this._balanceEntityRepository
       .find({
@@ -1201,7 +1219,7 @@ export class ArventGroupService {
    * @param body
    * @returns
    */
-  async createJuridicPerson(body: UserCompanyDTO) {
+  async createJuridicPerson(body: UserCompanyDTO, key: string = '') {
     if (!this.validateEnum(normalResponse, body.regulatedEntity20))
       throw 'El campo entidad regulada solo permite los valores de Si o No';
 
@@ -1241,7 +1259,15 @@ export class ArventGroupService {
     if (user.length > 0)
       throw 'Ya existe un cliente con este CUIT/CUIL o Email.';
 
-    const uuid = uuidv4();
+    const account = key
+      ? await this._accountEntityRepository
+          .findOne({
+            select: { id: true, key: true },
+            where: { key },
+          })
+          .then((response) => response)
+      : 0;
+    const uuid = body.customerId ?? uuidv4();
     const userCompany = this._userCompanyEntityRepository.create({
       business_name: body.businessName,
       cuit_cdi_cie: body.cuitCDICIE,
@@ -1260,6 +1286,7 @@ export class ArventGroupService {
       name: body.name,
       last_name: body.lastName,
       uuid,
+      accountId: account ? account.id : 0,
     });
 
     await this._userCompanyEntityRepository
@@ -1724,30 +1751,30 @@ export class ArventGroupService {
         status: 'active',
       });
       await this.creditTransactions();
-const config: AxiosRequestConfig = {
-      method: 'POST',
-      url: "https://pennyapi-ramps.alfredpay.app/v1/chronos/webhook",
-      data:body,
-    };
-const response = await axios(config)
-      .then((response) => response)
-      .catch(async (error) => {
-        console.log('error axios', error.response.data);
-        await this._logsEntityRepository.save({
-          request: JSON.stringify({
+      const config: AxiosRequestConfig = {
+        method: 'POST',
+        url: 'https://pennyapi-ramps.alfredpay.app/v1/chronos/webhook',
+        data: body,
+      };
+      const response = await axios(config)
+        .then((response) => response)
+        .catch(async (error) => {
+          console.log('error axios', error.response.data);
+          await this._logsEntityRepository.save({
+            request: JSON.stringify({
+              method: 'POST',
+              url: 'https://penny-api-ramps.alfredpay.app/v1/chronos/webhook',
+              data: body,
+            }),
+            error: JSON.stringify(error?.response?.data),
+            createdAt: this.convertDate(),
+            type: 'bind-transfer',
             method: 'POST',
-            url: "https://penny-api-ramps.alfredpay.app/v1/chronos/webhook",
-            data: body,
-          }),
-          error: JSON.stringify(error?.response?.data),
-          createdAt: this.convertDate(),
-          type: 'bind-transfer',
-          method: 'POST',
-          url: '/send-transaction',
+            url: '/send-transaction',
+          });
+          throw error?.response?.data?.message;
         });
-        throw error?.response?.data?.message;
-      });
-      
+
       return 'Webhook creado correctamente';
     }
     return 'Webhook vacio';

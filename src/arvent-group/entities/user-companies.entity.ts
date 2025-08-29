@@ -55,4 +55,7 @@ export class UserCompany {
 
   @Column({ type: 'text', nullable: true })
   uuid: string;
+
+  @Column({ nullable: false, default: 0 })
+  accountId: number;
 }

@@ -91,6 +91,11 @@ export class UserCompanyDTO {
   @IsNotEmpty()
   @IsString()
   cuitCDICIE: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  customerId: string;
 }
 
 export class PersonDTO {
