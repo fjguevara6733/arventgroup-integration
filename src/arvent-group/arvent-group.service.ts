@@ -808,7 +808,7 @@ export class ArventGroupService {
    * @returns
    */
   async stateBalance(where: any, isCalled = false) {
-    let filter = where ? { ...where } : {};
+    let filter = where && !isCalled ? { ...where } : {};
     let userAccount;
     if (isCalled) {
       let user = await this._userCompanyEntityRepository
