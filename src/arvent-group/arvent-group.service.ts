@@ -1062,14 +1062,6 @@ export class ArventGroupService {
     }
   }
 
-  // Verificar si ya existe una transacción con ese status
-  private async existsTransactionWithStatus(idTransaction: string) {
-    const existing = await this._transactionEntityRepository.find({
-      where: { idTransaction },
-    });
-    return existing.length > 0;
-  }
-
   // Guardar transacción actualizada en BD
   private async saveUpdatedTransaction(transaction: any, response: any) {
     return this._transactionEntityRepository.update(
@@ -1096,8 +1088,13 @@ export class ArventGroupService {
     );
     let balanceAccount;
     if (!emails) {
-      const { origin_debit } = response;
-      balanceAccount = balances.find((e) => e.cvu === origin_debit.cvu);
+      const user = await this._userEntityRepository.findOne({
+        where: { email: transaction.email },
+      });
+      const client = await this._clientEntityRepository.findOne({
+        where: { cuit: user.cuitcuil, accountId: user.accountId },
+      });
+      balanceAccount = balances.find((e) => e.cvu === client.cvu);
     } else balanceAccount = balances.find((e) => e.cvu === emails.cvu);
 
     const currentBalance = Number(balanceAccount.amount);
