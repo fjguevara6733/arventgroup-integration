@@ -1009,19 +1009,6 @@ export class ArventGroupService {
       // const transactionId = JSON.parse(transaction.response).transaction_ids[0];
       const transactionId = transaction.idTransaction;
       const response = await this.getTransactionById(transactionId);
-      console.log('response', response);
-      await this._logsEntityRepository.save({
-        request: JSON.stringify(response),
-        error: '',
-        createdAt: this.convertDate(),
-        type: 'transaction-request-types/TRANSFER',
-        method: 'POST',
-        url: '/get-transaction-by/:id',
-      });
-      const alreadyExists = await this.existsTransactionWithStatus(
-        transaction.idTransaction,
-      );
-      if (alreadyExists) continue;
 
       await this.saveUpdatedTransaction(transaction, response);
       await this.updateUserBalance(transaction, response, balances);
