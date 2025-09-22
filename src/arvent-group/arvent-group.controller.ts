@@ -217,7 +217,7 @@ export class ArventGroupController {
       });
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron(CronExpression.EVERY_MINUTE)
   @Get('transactions-get-credits')
   async updateStatusTransactionsCredit() {
     try {
