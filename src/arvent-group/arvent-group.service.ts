@@ -1883,6 +1883,8 @@ export class ArventGroupService {
   }
 
   async getTransactionById(id: string) {
+    if(id.includes('TRANSFERENCIA-')) id = id.replace('TRANSFERENCIA-','');
+
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/TRANSFER/${id}`;
     const tokenExist = await this.getToken();
     const headers = {
