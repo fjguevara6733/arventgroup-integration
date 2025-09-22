@@ -532,14 +532,11 @@ export class ArventGroupService {
       where: { status: 'IN_PROGRESS' },
       take: 10,
     });
-    console.log('data', data);
 
     if (data.length === 0) return false;
-    console.log('data', data);
     const users = await this._userEntityRepository.find({
       where: { email: In(data.map((e) => e.email)) },
     });
-    console.log('users', users);
     const accounts = await this._accountEntityRepository
       .find({
         select: { id: true, email: true },
@@ -554,13 +551,11 @@ export class ArventGroupService {
           };
         });
       });
-    console.log('accounts', accounts);
 
     for (const transaction of data) {
       const dataResponse = await this.getTransactionById(
         transaction.idTransaction,
       );
-      console.log('dataResponse', dataResponse);
       await this._logsEntityRepository.save({
         request: JSON.stringify({
           method: 'GET',
