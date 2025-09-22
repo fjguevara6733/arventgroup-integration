@@ -1010,7 +1010,7 @@ export class ArventGroupService {
 
     if (transactions.length === 0) return false;
 
-    const balances = await this.stateBalance({}).then((r) => r);
+    // const balances = await this.stateBalance({}).then((r) => r);
 
     for (const transaction of transactions) {
       // const transactionId = JSON.parse(transaction.response).transaction_ids[0];
@@ -1018,7 +1018,7 @@ export class ArventGroupService {
       const response = await this.getTransactionById(transactionId);
 
       await this.saveUpdatedTransaction(transaction, response);
-      await this.updateUserBalance(transaction, response, balances);
+      // await this.updateUserBalance(transaction, response, balances);
     }
 
     return true;
