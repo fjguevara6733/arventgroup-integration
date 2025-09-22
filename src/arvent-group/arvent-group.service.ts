@@ -1007,7 +1007,7 @@ export class ArventGroupService {
 
     for (const transaction of transactions) {
       const transactionId = JSON.parse(transaction.response).transaction_ids[0];
-      const response = await this.fetchTransactionStatus(transactionId);
+      const response = await this.getTransactionById(transactionId);
       console.log('response', response);
       const alreadyExists = await this.existsTransactionWithStatus(
         transaction.idTransaction,
