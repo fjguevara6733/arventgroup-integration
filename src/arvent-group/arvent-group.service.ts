@@ -523,6 +523,7 @@ export class ArventGroupService {
       where: { status: 'IN_PROGRESS' },
       take: 10,
     });
+    console.log('data', data);
 
     if (data.length === 0) return false;
     console.log('data', data);
