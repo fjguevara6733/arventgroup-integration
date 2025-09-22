@@ -1010,6 +1010,14 @@ export class ArventGroupService {
       const transactionId = transaction.idTransaction;
       const response = await this.getTransactionById(transactionId);
       console.log('response', response);
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(response),
+        error: '',
+        createdAt: this.convertDate(),
+        type: 'transaction-request-types/TRANSFER',
+        method: 'POST',
+        url: '/get-transaction-by/:id',
+      });
       const alreadyExists = await this.existsTransactionWithStatus(
         transaction.idTransaction,
       );
@@ -1884,7 +1892,7 @@ export class ArventGroupService {
   }
 
   async getTransactionById(id: string) {
-    if(id.includes('TRANSFERENCIA-')) id = id.replace('TRANSFERENCIA-','');
+    if (id.includes('TRANSFERENCIA-')) id = id.replace('TRANSFERENCIA-', '');
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transaction-request-types/TRANSFER/${id}`;
     const tokenExist = await this.getToken();
