@@ -1027,7 +1027,6 @@ export class ArventGroupService {
     return this._transactionEntityRepository.find({
       where: {
         status: In(['PENDING', 'AWAITING_CONFIRMATION', 'IN_PROGRESS']),
-        type: In(['credit']),
         idTransaction: Not(In(completed.map((t) => t.idTransaction))),
       },
       order: { datetransaction: 'DESC' },
