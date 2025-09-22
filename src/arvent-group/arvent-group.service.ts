@@ -240,6 +240,15 @@ export class ArventGroupService {
   async doTransaction(body: DoRequestDto, key: string = '') {
     const { destinationCbu, amount, email } = body;
 
+    const accountInformation = await this.getInformationAccount();
+
+    const accountSelected = accountInformation.find(
+      (e) => e.id === this.accountId,
+    );
+
+    if (accountSelected.balance.amount < Number(amount))
+       throw 'Fondos insuficientes del banco';
+
     const emails = await this.getEmail(email, key);
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
 
