@@ -998,13 +998,17 @@ export class ArventGroupService {
    */
   async updateStatusTransactionsCredit() {
     const transactions = await this.getPendingTransactions();
+    console.log('transactions', transactions);
+
     if (transactions.length === 0) return false;
 
     const balances = await this.stateBalance({}).then((r) => r);
+    console.log('balances', balances);
 
     for (const transaction of transactions) {
       const transactionId = JSON.parse(transaction.response).transaction_ids[0];
       const response = await this.fetchTransactionStatus(transactionId);
+      console.log('response', response);
       const alreadyExists = await this.existsTransactionWithStatus(
         transaction.idTransaction,
       );
