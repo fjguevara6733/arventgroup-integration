@@ -1091,17 +1091,14 @@ export class ArventGroupService {
     balances: any[],
   ) {
     const { charge } = response;
-    let emails: any = this.datos.find(
+    const emails = this.datos.find(
       (e) => e.email.toLowerCase() === transaction.email.toLowerCase(),
     );
-
+    let balanceAccount;
     if (!emails) {
       const { origin_debit } = response;
-      emails = {
-        cvu: origin_debit.cvu,
-      };
-    }
-    const balanceAccount = balances.find((e) => e.cvu === emails.cvu);
+      balanceAccount = balances.find((e) => e.cvu === origin_debit.cvu);
+    } else balanceAccount = balances.find((e) => e.cvu === emails.cvu);
 
     const currentBalance = Number(balanceAccount.amount);
     const amount = Number(charge.value.amount);
