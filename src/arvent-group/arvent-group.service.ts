@@ -998,12 +998,10 @@ export class ArventGroupService {
    */
   async updateStatusTransactionsCredit() {
     const transactions = await this.getPendingTransactions();
-    console.log('transactions', transactions);
 
     if (transactions.length === 0) return false;
 
     const balances = await this.stateBalance({}).then((r) => r);
-    console.log('balances', balances);
 
     for (const transaction of transactions) {
       // const transactionId = JSON.parse(transaction.response).transaction_ids[0];
@@ -1074,14 +1072,16 @@ export class ArventGroupService {
 
   // Guardar transacción actualizada en BD
   private async saveUpdatedTransaction(transaction: any, response: any) {
-    return this._transactionEntityRepository.save({
-      idTransaction: transaction.idTransaction,
-      response: JSON.stringify(response),
-      status: response.status,
-      email: transaction.email,
-      datetransaction: new Date(),
-      type: transaction.type,
-    });
+    return this._transactionEntityRepository.update(
+      { idTransaction: transaction.idTransaction },
+      {
+        response: JSON.stringify(response),
+        status: response.status,
+        email: transaction.email,
+        datetransaction: new Date(),
+        type: transaction.type,
+      },
+    );
   }
 
   // Actualizar balance del usuario según tipo de transacción
@@ -1091,9 +1091,16 @@ export class ArventGroupService {
     balances: any[],
   ) {
     const { charge } = response;
-    const emails = this.datos.find(
+    let emails: any = this.datos.find(
       (e) => e.email.toLowerCase() === transaction.email.toLowerCase(),
     );
+
+    if (!emails) {
+      const { origin_debit } = response;
+      emails = {
+        cvu: origin_debit.cvu,
+      };
+    }
     const balanceAccount = balances.find((e) => e.cvu === emails.cvu);
 
     const currentBalance = Number(balanceAccount.amount);
