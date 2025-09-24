@@ -1544,7 +1544,7 @@ export class ArventGroupService {
     delete user.id;
 
     return {
-      cvu: dataClient ? dataClient.cvu : '',
+      cvu: dataClient && dataClient.cuit === cuit? dataClient.cvu : '',
       id,
       ...user,
       files: files.map((e) => {
