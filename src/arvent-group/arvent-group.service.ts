@@ -1351,14 +1351,16 @@ export class ArventGroupService {
           where: { key },
         })
       : 0;
-    const uuid = uuidv4().replace(/-/g, '').substring(0, 10); // Genera un UUID y elimina los guiones
-    const numericUUID = Number(uuid);
+    const numericUUID = Math.floor(Math.random() * 1_000_000_000);
+    console.log('numericUUID', numericUUID);
     const data: Client = {
-      client_id: Number(numericUUID),
+      client_id: numericUUID,
       currency: 'ARS',
       name: body.name,
       cuit: body.cuit,
     };
+    console.log('data', data);
+
     await this.validateClient(data.cuit);
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
@@ -1416,6 +1418,14 @@ export class ArventGroupService {
       error: JSON.stringify(response),
     });
     const sqlClient = await this._clientEntityRepository.create({
+      clientId: String(numericUUID),
+      cuit: data.cuit,
+      cvu: response.cvu,
+      creation_date: this.convertDate(),
+      accountId: account ? account.id : 0,
+    });
+
+    console.log('client', {
       clientId: String(numericUUID),
       cuit: data.cuit,
       cvu: response.cvu,
