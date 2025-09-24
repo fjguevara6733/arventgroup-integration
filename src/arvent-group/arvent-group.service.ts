@@ -1430,7 +1430,13 @@ export class ArventGroupService {
       .then((response) => response)
       .catch(async (error) => {
         await this._logsEntityRepository.save({
-          request: JSON.stringify(sqlClient),
+          request: JSON.stringify({
+            clientId: String(numericUUID),
+            cuit: data.cuit,
+            cvu: response.cvu,
+            creation_date: this.convertDate(),
+            accountId: account ? account.id : 0,
+          }),
           error: error,
           createdAt: this.convertDate(),
           type: 'client-sql',
