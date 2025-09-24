@@ -1352,14 +1352,12 @@ export class ArventGroupService {
         })
       : 0;
     const numericUUID = Math.floor(Math.random() * 1_000_000_000);
-    console.log('numericUUID', numericUUID);
     const data: Client = {
       client_id: numericUUID,
       currency: 'ARS',
       name: body.name,
       cuit: body.cuit,
     };
-    console.log('data', data);
 
     await this.validateClient(data.cuit);
 
@@ -1417,23 +1415,15 @@ export class ArventGroupService {
       url: '/create-cvu-client-bind',
       error: JSON.stringify(response),
     });
-    const sqlClient = await this._clientEntityRepository.create({
-      clientId: String(numericUUID),
-      cuit: data.cuit,
-      cvu: response.cvu,
-      creation_date: this.convertDate(),
-      accountId: account ? account.id : 0,
-    });
 
-    console.log('client', {
-      clientId: String(numericUUID),
-      cuit: data.cuit,
-      cvu: response.cvu,
-      creation_date: this.convertDate(),
-      accountId: account ? account.id : 0,
-    });
     await this._clientEntityRepository
-      .save(sqlClient)
+      .save({
+        clientId: String(numericUUID),
+        cuit: data.cuit,
+        cvu: response.cvu,
+        creation_date: this.convertDate(),
+        accountId: account ? account.id : 0,
+      })
       .catch((error) => {
         throw error;
       })
