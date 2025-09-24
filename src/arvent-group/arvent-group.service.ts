@@ -247,7 +247,7 @@ export class ArventGroupService {
     );
 
     if (accountSelected.balance.amount < Number(amount))
-       throw 'Fondos insuficientes del banco';
+      throw 'Fondos insuficientes del banco';
 
     const emails = await this.getEmail(email, key);
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
@@ -1326,7 +1326,7 @@ export class ArventGroupService {
    * @param body
    * @returns
    */
-  async createClientCvu(body: createClientCvu) {
+  async createClientCvu(body: createClientCvu, key: string) {
     const user = await this.validateUser(body.customerId);
     const cuit = user.isNatural ? user.cuitcuil : user.cuit_cdi_cie;
     const files = await this._fileEntityRepository
@@ -1341,8 +1341,12 @@ export class ArventGroupService {
     else if (!user.isNatural && files.length < 5)
       throw 'El usuario no cuenta con todos los documentos cargados';
 
-    const uuid = uuidv4().replace(/-/g, '').substring(0, 10); // Genera un UUID y elimina los guiones
-    const numericUUID = parseInt(uuid, 16);
+    const account = key
+      ? await this._accountEntityRepository.findOne({
+          where: { key },
+        })
+      : 0;
+    const numericUUID = Math.floor(Math.random() * 1_000_000_000);
     const data: Client = {
       client_id: numericUUID,
       currency: 'ARS',
@@ -1380,13 +1384,13 @@ export class ArventGroupService {
         throw error?.response?.data?.message;
       });
 
-    const sqlClient = await this._clientEntityRepository.create({
+    const sqlClient = {
       clientId: String(data.client_id),
       cuit: data.cuit,
       cvu: response.cvu,
       creation_date: this.convertDate(),
-      accountId: 0,
-    });
+      accountId: account ? account.id : 0,
+    };
     await this._clientEntityRepository
       .save(sqlClient)
       .then((response) => response)
