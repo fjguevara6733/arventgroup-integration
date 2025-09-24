@@ -1416,7 +1416,7 @@ export class ArventGroupService {
       error: JSON.stringify(response),
     });
     const sqlClient = await this._clientEntityRepository.create({
-      clientId: String(data.client_id),
+      clientId: String(numericUUID),
       cuit: data.cuit,
       cvu: response.cvu,
       creation_date: this.convertDate(),
