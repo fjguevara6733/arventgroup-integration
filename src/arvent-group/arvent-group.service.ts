@@ -1532,7 +1532,7 @@ export class ArventGroupService {
    */
   async getDataUser(customerId) {
     const user = await this.validateUser(customerId);
-    const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
+    const cuit = user.isNatural ? user.cuitcuil : user.cuit_cdi_cie;
     const files = await this._fileEntityRepository.find({
       where: { cuit },
     });
