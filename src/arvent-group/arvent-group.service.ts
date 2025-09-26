@@ -247,7 +247,7 @@ export class ArventGroupService {
     );
 
     if (accountSelected.balance.amount < Number(amount))
-       throw 'Fondos insuficientes del banco';
+      throw 'Fondos insuficientes del banco';
 
     const emails = await this.getEmail(email, key);
     if (emails === undefined) return 'Email no asociado a ninguna cuenta';
@@ -1951,12 +1951,12 @@ export class ArventGroupService {
   ) {
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/transactions`;
     const tokenExist = await this.getToken();
-    const headers: Record<string, string> = {
+    const headers: Record<string, any> = {
       Authorization: `JWT ${tokenExist}`,
     };
     if (sort) headers.obp_sort_direction = sort;
-    if (limit) headers.obp_limit = limit;
-    if (offset) headers.obp_offset = offset;
+    if (limit) headers.obp_limit = Number(limit);
+    if (offset) headers.obp_offset = Number(offset);
     if (from) headers.obp_from_date = from;
     if (to) headers.obp_to_date = to;
     if (categories && categories.length > 0)
