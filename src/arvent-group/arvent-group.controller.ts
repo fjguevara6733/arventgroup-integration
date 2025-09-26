@@ -315,9 +315,13 @@ export class ArventGroupController {
 
   @Post('create-cvu-client')
   @ApiHeader({ name: 'api-key', required: true })
-  async createClientCvu(@Res() res: Response, @Body() body: createClientCvu) {
+  async createClientCvu(
+    @Res() res: Response,
+    @Body() body: createClientCvu,
+    @Headers('key') key: string,
+  ) {
     await this.arventGroupService
-      .createClientCvu(body)
+      .createClientCvu(body, key)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
