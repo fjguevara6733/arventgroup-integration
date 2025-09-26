@@ -1958,13 +1958,17 @@ export class ArventGroupService {
     const headers: Record<string, any> = {
       Authorization: `JWT ${tokenExist}`,
     };
-    if (sort) headers.obp_sort_direction = sort;
-    if (limit) headers.obp_limit = Number(limit);
-    if (offset) headers.obp_offset = Number(offset);
-    if (from) headers.obp_from_date = from;
-    if (to) headers.obp_to_date = to;
-    if (categories && categories.length > 0)
-      headers.obp_categories = categories.join(',');
+    if (limit) headers['obp_limit'] = Number(limit);
+    else headers['obp_limit'] = 50; // valor por defecto
+
+    if (offset) headers['obp_offset'] = Number(offset);
+    else headers['obp_offset'] = 0; // valor por defecto
+
+    if (from) headers['obp_from_date'] = from;
+    if (to) headers['obp_to_date'] = to;
+    if (categories && categories.length > 0) {
+      headers['obp_categories'] = categories.join(',');
+    }
 
     const config: AxiosRequestConfig = {
       method: 'GET',
