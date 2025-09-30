@@ -241,7 +241,17 @@ export class ArventGroupService {
     const { destinationCbu, amount, email } = body;
 
     const emails = await this.getEmail(email);
-    if (emails === undefined) return 'Email no asociado a ninguna cuenta';
+    if (emails === undefined) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'Email no asociado a ninguna cuent',
+        createdAt: this.convertDate(),
+        type: 'validation error email not found',
+        method: 'POST',
+        url: '/send-transaction',
+      });
+      return 'Email no asociado a ninguna cuenta';
+    }
 
     const dataClient = await this._clientEntityRepository
       .findOne({
@@ -264,13 +274,22 @@ export class ArventGroupService {
       (response) => response[0],
     );
 
-    if (Number(balances.amount) < Number(amount)) throw 'Fondos insuficientes';
+    if (Number(balances.amount) < Number(amount)) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'Fondos insuficientes',
+        createdAt: this.convertDate(),
+        type: 'validation error insufficient funds',
+        method: 'POST',
+        url: '/send-transaction',
+      });
+      throw 'Fondos insuficientes';
+    }
     const user = await this._userEntityRepository
       .findOne({
         where: { email: emails.email },
       })
       .then((response) => response);
-    console.log('user', user);
 
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
@@ -406,11 +425,30 @@ export class ArventGroupService {
    * @returns
    */
   async transactionReport(body: arventGetTransactions) {
-    if (!this.validateEnum(TypeTransactions, body.type))
+    if (!this.validateEnum(TypeTransactions, body.type)) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'Tipo de transacción no válida',
+        createdAt: this.convertDate(),
+        type: 'validation error insufficient funds',
+        method: 'POST',
+        url: '/transactions-report',
+      });
       throw 'Tipo de transacción no válida';
+    }
 
     const emails = await this.getEmail(body.accountEmail);
-    if (emails === undefined) throw 'Email no asociado a ninguna cuenta';
+    if (emails === undefined) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'Email no asociado a ninguna cuenta',
+        createdAt: this.convertDate(),
+        type: 'validation error email not exist',
+        method: 'POST',
+        url: '/transactions-report',
+      });
+      throw 'Email no asociado a ninguna cuenta';
+    }
 
     if (body.limit === 0) body.limit = 10;
 
@@ -806,7 +844,17 @@ export class ArventGroupService {
             return error;
           });
 
-        if (!client) throw 'Email no asociado a ninguna cuenta';
+        if (!client) {
+          await this._logsEntityRepository.save({
+            request: JSON.stringify(where),
+            error: 'Email no asociado a ninguna cuenta',
+            createdAt: this.convertDate(),
+            type: 'validation error email not exist',
+            method: 'GET',
+            url: '/balance',
+          });
+          throw 'Email no asociado a ninguna cuenta';
+        }
 
         filter = { cvu: client.cvu };
       } else {
@@ -842,7 +890,17 @@ export class ArventGroupService {
     const { originCbu, amount, email } = body;
     const emails = await this.getEmail(email);
 
-    if (emails === undefined) return 'Email no asociado a ninguna cuenta';
+    if (emails === undefined) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'Email no asociado a ninguna cuenta',
+        createdAt: this.convertDate(),
+        type: 'validation error email not exist',
+        method: 'POST',
+        url: '/get-transaction-debin',
+      });
+      return 'Email no asociado a ninguna cuenta';
+    }
 
     const params: BindRequestInterface = {
       origin_id: uuidv4().substring(0, 14).replace(/-/g, '0'),
@@ -1034,7 +1092,17 @@ export class ArventGroupService {
    */
   async transactionReportDebit(body: arventGetTransactions) {
     const emails = await this.getEmail(body.accountEmail);
-    if (emails === undefined) return 'Email no asociado a ninguna cuenta';
+    if (emails === undefined) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'Email no asociado a ninguna cuenta',
+        createdAt: this.convertDate(),
+        type: 'validation error email not exist',
+        method: 'GET',
+        url: '/transactions-report-debit',
+      });
+      return 'Email no asociado a ninguna cuenta';
+    }
 
     if (body.limit === 0) body.limit = 10;
 
@@ -1063,17 +1131,52 @@ export class ArventGroupService {
    * @returns
    */
   async createNaturalPerson(body: PersonDTO, key: string = '') {
-    if (!this.validateEnum(normalResponse, body.regulatedEntity20))
+    if (!this.validateEnum(normalResponse, body.regulatedEntity20)) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El campo entidad regulada solo permite los valores de Si o No',
+        createdAt: this.convertDate(),
+        type: 'validation error enum regulatedEntity20',
+        method: 'POST',
+        url: '/create-natural-person',
+      });
       throw 'El campo entidad regulada solo permite los valores de Si o No';
-
-    if (!this.validateEnum(normalResponse, body.politicPerson))
+    }
+    if (!this.validateEnum(normalResponse, body.politicPerson)) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El campo persona política solo permite los valores de Si o No',
+        createdAt: this.convertDate(),
+        type: 'validation error enum politic Person',
+        method: 'POST',
+        url: '/create-natural-person',
+      });
       throw 'El campo persona política solo permite los valores de Si o No';
+    }
 
-    if (this.validarNumeroArgentina(body.phone) === false)
+    if (this.validarNumeroArgentina(body.phone) === false) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El campo telefono solo admite telefonos de Argentina',
+        createdAt: this.convertDate(),
+        type: 'validation error squedule phone argentina',
+        method: 'POST',
+        url: '/create-natural-person',
+      });
       throw 'El campo telefono solo admite telefonos de Argentina';
+    }
 
-    if (body.cuitCuil.length < 11)
+    if (body.cuitCuil.length < 11) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El campo cuit/cuil debe tener 11 digitos',
+        createdAt: this.convertDate(),
+        type: 'validation error length cuit',
+        method: 'POST',
+        url: '/create-natural-person',
+      });
       throw 'El campo cuit/cuil debe tener 11 digitos';
+    }
 
     const user = await this._userEntityRepository
       .find({
@@ -1155,17 +1258,53 @@ export class ArventGroupService {
    * @returns
    */
   async createJuridicPerson(body: UserCompanyDTO, key: string = '') {
-    if (!this.validateEnum(normalResponse, body.regulatedEntity20))
+    if (!this.validateEnum(normalResponse, body.regulatedEntity20)) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El campo entidad regulada solo permite los valores de Si o No',
+        createdAt: this.convertDate(),
+        type: 'validation error enum regulatedEntity20',
+        method: 'POST',
+        url: '/create-juridic-person',
+      });
       throw 'El campo entidad regulada solo permite los valores de Si o No';
+    }
 
-    if (!this.validateEnum(normalResponse, body.politicPerson))
+    if (!this.validateEnum(normalResponse, body.politicPerson)) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El campo persona política solo permite los valores de Si o No',
+        createdAt: this.convertDate(),
+        type: 'validation error enum politicPerson',
+        method: 'POST',
+        url: '/create-juridic-person',
+      });
       throw 'El campo persona política solo permite los valores de Si o No';
+    }
 
-    if (this.validarNumeroArgentina(body.headquartersPhone) === false)
+    if (this.validarNumeroArgentina(body.headquartersPhone) === false) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El campo telefono solo admite telefonos de Argentina',
+        createdAt: this.convertDate(),
+        type: 'validation error SQUEDULE phone argentina',
+        method: 'POST',
+        url: '/create-juridic-person',
+      });
       throw 'El campo telefono solo admite telefonos de Argentina';
+    }
 
-    if (body.cuitCDICIE.length < 11)
+    if (body.cuitCDICIE.length < 11) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El campo cuit/cuil debe tener 11 digitos',
+        createdAt: this.convertDate(),
+        type: 'validation error length cuit',
+        method: 'POST',
+        url: '/create-juridic-person',
+      });
       throw 'El campo cuit/cuil debe tener 11 digitos';
+    }
 
     const user = await this._userCompanyEntityRepository
       .find({
@@ -1251,11 +1390,38 @@ export class ArventGroupService {
       })
       .then((response) => response);
 
-    if (!files) throw 'El usuario no cuenta con todos los documentos cargados';
-    if (user.isNatural && files.length < 2)
+    if (!files) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El usuario no cuenta con todos los documentos cargados',
+        createdAt: this.convertDate(),
+        type: 'validation error length files',
+        method: 'POST',
+        url: '/create-cvu-client',
+      });
       throw 'El usuario no cuenta con todos los documentos cargados';
-    else if (!user.isNatural && files.length < 5)
+    }
+    if (user.isNatural && files.length < 2) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El usuario no cuenta con todos los documentos cargados',
+        createdAt: this.convertDate(),
+        type: 'validation error length files',
+        method: 'POST',
+        url: '/create-cvu-client',
+      });
       throw 'El usuario no cuenta con todos los documentos cargados';
+    } else if (!user.isNatural && files.length < 5) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El usuario no cuenta con todos los documentos cargados',
+        createdAt: this.convertDate(),
+        type: 'validation error length files',
+        method: 'POST',
+        url: '/create-cvu-client',
+      });
+      throw 'El usuario no cuenta con todos los documentos cargados';
+    }
 
     const uuid = uuidv4().replace(/-/g, '').substring(0, 10); // Genera un UUID y elimina los guiones
     const numericUUID = parseInt(uuid, 16);
@@ -1478,8 +1644,18 @@ export class ArventGroupService {
    * @returns
    */
   async uploadFile(body: UploadedDocDto, file: Express.Multer.File) {
-    if (!this.validateEnum(KycDocTypes, body.docType))
+    if (!this.validateEnum(KycDocTypes, body.docType)) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error:
+          'El campo doctType sólo permite los valores definidos en el enumerador',
+        createdAt: this.convertDate(),
+        type: 'validation error enum docType',
+        method: 'POST',
+        url: '/upload-file',
+      });
       throw 'El campo doctType sólo permite los valores definidos en el enumerador';
+    }
 
     const user = await this.validateUser(body.customerId);
 
@@ -1487,8 +1663,17 @@ export class ArventGroupService {
       user.isNatural &&
       body.docType !== KycDocTypes.idCardBack &&
       body.docType !== KycDocTypes.idCardFront
-    )
+    ) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(body),
+        error: 'El docType no es asignable para un usuario natural',
+        createdAt: this.convertDate(),
+        type: 'validation error select docType different natural person',
+        method: 'POST',
+        url: '/upload-file',
+      });
       throw 'El docType no es asignable para un usuario natural.';
+    }
 
     const imageData = `"${file.buffer.toString('base64')}"`;
     const cuit = user.isNatural ? user.cuitCuil : user.cuit_cdi_cie;
@@ -1567,8 +1752,17 @@ export class ArventGroupService {
         httpsAgent: this.httpsAgent,
       });
 
-      if (response.data.owners.length === 0)
+      if (response.data.owners.length === 0) {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify(cvu),
+          error: 'CVU invalida para operar',
+          createdAt: this.convertDate(),
+          type: 'validation error cvu not found',
+          method: 'GET',
+          url: '/get-data-cvu/:cvu',
+        });
         throw new Error('CVU invalida para operar.');
+      }
 
       return response.data;
     } catch (error) {
@@ -1622,8 +1816,17 @@ export class ArventGroupService {
       .then((response) => response)
       .catch((error) => error);
 
-    if (!existClient && !existClientJuridic)
+    if (!existClient && !existClientJuridic) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(customerId),
+        error: 'No existe un cliente con este customerId',
+        createdAt: this.convertDate(),
+        type: 'validation error user not found',
+        method: 'GET',
+        url: '/get-data-cvu/:cvu',
+      });
       throw 'No existe un cliente con este customerId';
+    }
 
     return existClient
       ? { isNatural: true, ...existClient }
@@ -1638,8 +1841,17 @@ export class ArventGroupService {
       .then((response) => response)
       .catch((error) => error);
 
-    if (existCvu && needError)
+    if (existCvu && needError) {
+      await this._logsEntityRepository.save({
+        request: JSON.stringify(cuit),
+        error: 'Este cuit ya cuenta con una cvu creada, por favor verifique',
+        createdAt: this.convertDate(),
+        type: 'validation error cuit exist',
+        method: 'GET',
+        url: '',
+      });
       throw 'Este cuit ya cuenta con una cvu creada, por favor verifique';
+    }
 
     return existCvu;
   }
