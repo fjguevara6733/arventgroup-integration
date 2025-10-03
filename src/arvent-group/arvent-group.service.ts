@@ -1617,10 +1617,7 @@ export class ArventGroupService {
     return response;
   }
 
-  async createCvuBind(
-    body: createClientCvuBind,
-    key: string,
-  ) {
+  async createCvuBind(body: createClientCvuBind, key: string) {
     const account = key
       ? await this._accountEntityRepository.findOne({
           select: { id: true, key: true },
@@ -1695,6 +1692,7 @@ export class ArventGroupService {
     });
 
     const dataAccount = await this.getAccount(response.cvu);
+    console.log(' dataAccount', dataAccount);
 
     const sqlClient = await this._clientEntityRepository.create({
       clientId: String(data.client_id),
