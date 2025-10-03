@@ -19,4 +19,7 @@ export class ClientEntity {
 
   @Column({ type: 'int', nullable: true })
   accountId: number;
+
+  @Column({nullable: true})
+  alias: string;
 }

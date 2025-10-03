@@ -861,11 +861,14 @@ export class ArventGroupService {
    * @param isCalled
    * @returns
    */
-  async stateBalance(where: any, isCalled = false) {
+  async stateBalance(where: any, isCalled = false, account: string = '') {
     let filter = where && !isCalled ? { ...where } : {};
     let userAccount;
+    let user;
+    let client;
+
     if (isCalled) {
-      let user = await this._userCompanyEntityRepository
+      user = await this._userCompanyEntityRepository
         .findOne({
           where: { email: where.email },
         })
@@ -911,7 +914,7 @@ export class ArventGroupService {
       }
 
       if (user) {
-        const client = await this._clientEntityRepository
+        client = await this._clientEntityRepository
           .findOne({
             where: { cuit: userAccount.cuit, accountId: userAccount.accountId },
           })
@@ -946,7 +949,7 @@ export class ArventGroupService {
       }
     }
 
-    return await this._balanceEntityRepository
+    const balances = await this._balanceEntityRepository
       .find({
         where: filter,
       })
@@ -961,6 +964,17 @@ export class ArventGroupService {
         });
         return error;
       });
+
+    return account !== ''
+      ? {
+          id: balances[0].id,
+          cvu: client.cvu,
+          alias: client.alias,
+          accountHolder: user.name
+            ? `${user.name} ${user.lastName}`
+            : user.businessName,
+        }
+      : balances;
   }
 
   /**
@@ -1603,7 +1617,10 @@ export class ArventGroupService {
     return response;
   }
 
-  async createCvuBind(body: createClientCvuBind, key: string) {
+  async createCvuBind(
+    body: createClientCvuBind,
+    key: string,
+  ) {
     const account = key
       ? await this._accountEntityRepository.findOne({
           select: { id: true, key: true },
@@ -1677,12 +1694,15 @@ export class ArventGroupService {
       error: JSON.stringify(response),
     });
 
+    const dataAccount = await this.getAccount(response.cvu);
+
     const sqlClient = await this._clientEntityRepository.create({
       clientId: String(data.client_id),
       cuit: data.cuit,
       cvu: response.cvu,
       creation_date: this.convertDate(),
       accountId: account ? account.id : 0,
+      alias: dataAccount.alias ?? '',
     });
     await this._clientEntityRepository
       .save(sqlClient)

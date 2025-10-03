@@ -168,9 +168,13 @@ export class ArventGroupController {
   }
 
   @Get('balances/:email')
-  async stateBalance(@Param('email') email: string, @Res() res: Response) {
+  async stateBalance(
+    @Param('email') email: string,
+    @Res() res: Response,
+    @Query('account') account?: string,
+  ) {
     await this.arventGroupService
-      .stateBalance({ email }, true)
+      .stateBalance({ email }, true, account)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
