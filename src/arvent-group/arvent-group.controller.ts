@@ -12,6 +12,7 @@ import {
   UploadedFile,
   Put,
   Headers,
+  Query,
 } from '@nestjs/common';
 import { ArventGroupService } from './arvent-group.service';
 import {
@@ -162,9 +163,13 @@ export class ArventGroupController {
   }
 
   @Get('balances/:email')
-  async stateBalance(@Param('email') email: string, @Res() res: Response) {
+  async stateBalance(
+    @Param('email') email: string,
+    @Res() res: Response,
+    @Query('account') account: string,
+  ) {
     await this.arventGroupService
-      .stateBalance({ email }, true)
+      .stateBalance({ email }, true, account)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,
@@ -519,9 +524,10 @@ export class ArventGroupController {
     @Res() res: Response,
     @Body() body: createClientCvuBind,
     @Headers('key') key: string,
+    @Query('account') account: string,
   ) {
     await this.arventGroupService
-      .createCvuBind(body, key)
+      .createCvuBind(body, key, account)
       .then((result) => {
         const response = {
           statusCode: HttpStatus.ACCEPTED,

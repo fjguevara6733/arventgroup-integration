@@ -777,12 +777,14 @@ export class ArventGroupService {
    * @param isCalled
    * @returns
    */
-  async stateBalance(where: any, isCalled = false) {
+  async stateBalance(where: any, isCalled = false, typeAccount: string = '') {
     let filter = where ? { ...where } : {};
     let userAccount;
+    let user;
+    let client;
 
     if (isCalled) {
-      let user = await this._userCompanyEntityRepository
+      user = await this._userCompanyEntityRepository
         .findOne({
           where: { email: where.email },
         })
@@ -828,7 +830,7 @@ export class ArventGroupService {
       }
 
       if (user) {
-        const client = await this._clientEntityRepository
+        client = await this._clientEntityRepository
           .findOne({
             where: { cuit: userAccount.cuit, accountId: userAccount.accountId },
           })
@@ -863,7 +865,7 @@ export class ArventGroupService {
       }
     }
 
-    return await this._balanceEntityRepository
+    const balance = await this._balanceEntityRepository
       .find({
         where: filter,
       })
@@ -878,6 +880,17 @@ export class ArventGroupService {
         });
         return error;
       });
+
+    return typeAccount === ''
+      ? balance
+      : {
+          id: balance[0].id,
+          cvu: balance[0].cvu,
+          alias: client ? client.alias : '',
+          accountHolder: user.name
+            ? `${user.name} ${user.lastname}`
+            : `${user.businessName}`,
+        };
   }
 
   /**
@@ -1511,7 +1524,11 @@ export class ArventGroupService {
     return response;
   }
 
-  async createCvuBind(body: createClientCvuBind, key: string) {
+  async createCvuBind(
+    body: createClientCvuBind,
+    key: string,
+    typeAccount: string = '',
+  ) {
     const account = key
       ? await this._accountEntityRepository.findOne({
           where: { key },
@@ -1526,6 +1543,16 @@ export class ArventGroupService {
     };
 
     await this.validateClient(data.cuit);
+    if (typeAccount !== '') {
+      return {
+        cvu: await this.generateRandomCvu({
+          clientId: String(numericUUID),
+          cuit: data.cuit,
+          creation_date: this.convertDate(),
+          accountId: account ? account.id : 0,
+        }),
+      };
+    }
 
     const url = `${this.urlBind}/banks/${this.idBank}/accounts/${this.accountId}/${this.idView}/wallet/cvu`;
     const tokenExist = await this.getToken();
@@ -2007,5 +2034,97 @@ export class ArventGroupService {
         });
         throw error?.response?.data?.message;
       });
+  }
+
+  private async generateRandomCvu(data): Promise<string> {
+    const baseCvu = '000005810329898';
+    const randomDigits = Math.floor(1000000 + Math.random() * 9000000)
+      .toString()
+      .padStart(7, '0');
+    const cvu = baseCvu + randomDigits;
+
+    await this._clientEntityRepository
+      .save({ ...data, cvu, alias: this.generateAlias() })
+      .catch((error) => {
+        throw error;
+      })
+      .then((response) => response)
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({ ...data, cvu }),
+          error: error,
+          createdAt: this.convertDate(),
+          type: 'client-sql',
+          method: 'POST',
+          url: '/create-cvu-client',
+        });
+      });
+
+    await this._balanceEntityRepository
+      .save({
+        cvu,
+        amount: 0,
+        accountId: data.accountId,
+      })
+      .then((response) => response)
+      .catch(async (error) => {
+        await this._logsEntityRepository.save({
+          request: JSON.stringify({
+            cvu,
+            amount: 0,
+            accountId: 0,
+          }),
+          error: error,
+          createdAt: this.convertDate(),
+          type: 'balance-sql',
+          method: 'POST',
+          url: '/create-cvu-client',
+        });
+      });
+
+    return cvu;
+  }
+
+  private generateAlias(): string {
+    const words = [
+      'luz',
+      'sol',
+      'mar',
+      'tierra',
+      'fuego',
+      'agua',
+      'cielo',
+      'estrella',
+      'nube',
+      'viento',
+      'montaña',
+      'bosque',
+      'rio',
+      'flor',
+      'roca',
+      'arena',
+      'trueno',
+      'lluvia',
+      'noche',
+      'dia',
+      'campo',
+      'camino',
+      'puente',
+      'rayo',
+      'hoja',
+      'nido',
+      'ave',
+      'piedra',
+      'costa',
+      'llama',
+    ];
+
+    const getRandomWord = () =>
+      words[Math.floor(Math.random() * words.length)].toUpperCase();
+
+    // alias de 3 palabras
+    const alias = [getRandomWord(), getRandomWord(), getRandomWord()].join('.');
+
+    return alias;
   }
 }
